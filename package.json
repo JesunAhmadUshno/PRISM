@@ -1,0 +1,65 @@
+{
+  "name": "prism",
+  "version": "1.0.0",
+  "description": "Browser-Based, Serverless Data Analytics & Visualization Platform - Zero Trust Architecture",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint src --ext ts,tsx --fix",
+    "test": "vitest",
+    "test:a11y": "vitest --config vitest.a11y.config.ts",
+    "typecheck": "tsc --noEmit",
+    "analyze": "vite-bundle-visualizer"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.2",
+    "recharts": "^2.12.7",
+    "dompurify": "^3.0.11",
+    "xlsx": "^0.18.5",
+    "fast-xml-parser": "^4.3.6",
+    "papaparse": "^5.4.1",
+    "react-dropzone": "^14.2.3",
+    "clsx": "^2.1.1",
+    "sonner": "^1.4.41"
+  },
+  "devDependencies": {
+    "@types/dompurify": "^3.0.5",
+    "@types/papaparse": "^5.3.14",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^7.13.1",
+    "@typescript-eslint/parser": "^7.13.1",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "axe-core": "^4.9.1",
+    "eslint": "^8.57.0",
+    "eslint-plugin-jsx-a11y": "^6.9.0",
+    "eslint-plugin-react": "^7.34.3",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.5.2",
+    "vite": "^5.3.1",
+    "vitest": "^1.6.0",
+    "@vitest/coverage-v8": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "browserslist": [
+    ">0.5%",
+    "not dead",
+    "not op_mini all"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/organization/prism.git"
+  },
+  "license": "PROPRIETARY",
+  "private": true
+}

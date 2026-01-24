@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         PRISM - Zero-Exfiltration Content Security Policy
+         
+         Security Design Principles:
+         1. default-src 'none' - Deny by default, allow explicitly
+         2. No external fonts, analytics, or tracking
+         3. Only Pyodide CDN allowed for WASM binaries
+         4. No form submissions, no framing, no plugins
+         
+         Last Security Audit: 2026-01-24
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'none';
+        script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net/pyodide/;
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data: blob:;
+        font-src 'self';
+        connect-src 'self' https://cdn.jsdelivr.net/pyodide/;
+        worker-src 'self' blob:;
+        child-src 'self' blob:;
+        frame-src 'none';
+        object-src 'none';
+        base-uri 'self';
+        form-action 'none';
+        frame-ancestors 'none';
+        upgrade-insecure-requests;
+        block-all-mixed-content;
+    ">
+    
+    <!-- Additional Security Headers (enforced by meta) -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    
+    <!-- Prevent DNS prefetching to external domains -->
+    <meta http-equiv="x-dns-prefetch-control" content="off" />
+    
+    <!-- SEO & Accessibility -->
+    <meta name="description" content="PRISM - Secure, browser-based data analytics platform. Your data never leaves your browser." />
+    <meta name="theme-color" content="#0c4a6e" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#e0f2fe" media="(prefers-color-scheme: light)" />
+    
+    <!-- Accessibility: Prevent zooming issues on mobile -->
+    <meta name="format-detection" content="telephone=no" />
+    
+    <title>PRISM - Secure Data Analytics</title>
+    
+    <!-- Preconnect to Pyodide CDN (only allowed external resource) -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <!-- Critical CSS for reduced CLS -->
+    <style>
+        /* Critical CSS - prevents flash of unstyled content */
+        :root {
+            --color-bg: #0c4a6e;
+            --color-text: #ffffff;
+        }
+        
+        @media (prefers-color-scheme: light) {
+            :root {
+                --color-bg: #e0f2fe;
+                --color-text: #0c4a6e;
+            }
+        }
+        
+        html, body, #root {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+        }
+        
+        /* Skip link styling */
+        .skip-link {
+            position: absolute;
+            top: -100px;
+            left: 0;
+            background: #000;
+            color: #fff;
+            padding: 8px 16px;
+            z-index: 10000;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        .skip-link:focus {
+            top: 0;
+            outline: 3px solid #ffff00;
+            outline-offset: 2px;
+        }
+        
+        /* Loading state - shows while JS loads */
+        .prism-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-size: 1.125rem;
+        }
+        
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Skip Links for Keyboard Navigation (WCAG 2.4.1) -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <a href="#file-upload" class="skip-link">Skip to file upload</a>
+    
+    <!-- Application Root -->
+    <div id="root" role="application" aria-label="PRISM Data Analytics Application">
+        <!-- Loading State (removed by React hydration) -->
+        <div class="prism-loading" role="status" aria-live="polite">
+            <p>Loading PRISM Analytics Engine...</p>
+        </div>
+    </div>
+    
+    <!-- No-Script Fallback -->
+    <noscript>
+        <div style="padding: 2rem; text-align: center; background: #fee2e2; color: #991b1b;">
+            <h1>JavaScript Required</h1>
+            <p>PRISM requires JavaScript to process your data securely in-browser.</p>
+            <p>Please enable JavaScript and reload the page.</p>
+            <p><strong>Your data never leaves your browser - all processing happens locally.</strong></p>
+        </div>
+    </noscript>
+    
+    <!-- Main Application Bundle -->
+    <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

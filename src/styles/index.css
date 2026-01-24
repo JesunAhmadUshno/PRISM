@@ -1,0 +1,286 @@
+/**
+ * PRISM Global Styles
+ * 
+ * TailwindCSS base with custom accessibility enhancements.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer base {
+  /* Root font sizing - minimum 16px per EN 301 549 */
+  html {
+    font-size: 100%; /* 16px base */
+    scroll-behavior: smooth;
+  }
+
+  /* Respect reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Focus styles - high visibility for keyboard navigation */
+  :focus-visible {
+    outline: 3px solid #0ea5e9;
+    outline-offset: 2px;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: more) {
+    :focus-visible {
+      outline: 3px solid #ffff00;
+      outline-offset: 2px;
+    }
+  }
+
+  /* Forced colors mode (Windows High Contrast) */
+  @media (forced-colors: active) {
+    :focus-visible {
+      outline: 3px solid CanvasText;
+    }
+  }
+
+  /* Body defaults */
+  body {
+    @apply antialiased;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+      'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+    line-height: 1.6;
+  }
+
+  /* Ensure minimum touch targets (44x44px - WCAG 2.5.5) */
+  button,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"],
+  input[type="reset"],
+  select,
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Link styles with good contrast */
+  a {
+    @apply text-prism-600 dark:text-prism-400 underline;
+    text-underline-offset: 2px;
+  }
+
+  a:hover {
+    @apply text-prism-800 dark:text-prism-200;
+  }
+
+  /* Heading hierarchy */
+  h1 { @apply text-4xl font-bold; }
+  h2 { @apply text-3xl font-bold; }
+  h3 { @apply text-2xl font-semibold; }
+  h4 { @apply text-xl font-semibold; }
+  h5 { @apply text-lg font-medium; }
+  h6 { @apply text-base font-medium; }
+
+  /* Code blocks */
+  code {
+    @apply bg-prism-100 dark:bg-prism-800 px-1 py-0.5 rounded text-sm;
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+  }
+
+  /* Tables */
+  table {
+    @apply w-full border-collapse;
+  }
+
+  th, td {
+    @apply p-3 text-left border-b border-prism-200 dark:border-prism-700;
+  }
+
+  th {
+    @apply font-semibold bg-prism-100 dark:bg-prism-800;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPONENT STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer components {
+  /* Skip link for accessibility */
+  .skip-link {
+    @apply absolute top-0 left-0 p-4 bg-prism-900 text-white font-bold;
+    @apply -translate-y-full focus:translate-y-0;
+    @apply transition-transform duration-200;
+    z-index: 9999;
+  }
+
+  /* Card component */
+  .card {
+    @apply bg-white dark:bg-prism-900 rounded-prism shadow-lg p-6;
+    @apply border border-prism-200 dark:border-prism-700;
+  }
+
+  /* Button variants */
+  .btn {
+    @apply inline-flex items-center justify-center;
+    @apply px-4 py-2 rounded-prism font-medium;
+    @apply transition-colors duration-200;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-prism-500 focus-visible:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-prism-600 text-white;
+    @apply hover:bg-prism-700;
+    @apply dark:bg-prism-500 dark:hover:bg-prism-600;
+  }
+
+  .btn-secondary {
+    @apply btn bg-prism-200 text-prism-900;
+    @apply hover:bg-prism-300;
+    @apply dark:bg-prism-700 dark:text-prism-100 dark:hover:bg-prism-600;
+  }
+
+  /* Input styles */
+  .input {
+    @apply w-full px-4 py-2 rounded-prism;
+    @apply bg-white dark:bg-prism-900;
+    @apply border border-prism-300 dark:border-prism-600;
+    @apply text-prism-900 dark:text-prism-100;
+    @apply placeholder-prism-400 dark:placeholder-prism-500;
+    @apply focus:outline-none focus:ring-2 focus:ring-prism-500 focus:border-transparent;
+  }
+
+  /* Alert/notification styles */
+  .alert {
+    @apply p-4 rounded-prism border;
+  }
+
+  .alert-info {
+    @apply alert bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200;
+  }
+
+  .alert-success {
+    @apply alert bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200;
+  }
+
+  .alert-warning {
+    @apply alert bg-yellow-50 dark:bg-yellow-950 border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200;
+  }
+
+  .alert-error {
+    @apply alert bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UTILITY STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer utilities {
+  /* Screen reader only - visually hidden but accessible */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Remove sr-only */
+  .not-sr-only {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+
+  /* Focus visible ring utility */
+  .focus-visible-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-prism-500 focus-visible:ring-offset-2;
+  }
+
+  /* Touch target minimum size */
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Text selection colors */
+  ::selection {
+    @apply bg-prism-200 dark:bg-prism-700 text-prism-900 dark:text-prism-100;
+  }
+
+  /* Scrollbar styling */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.prism.400') transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-prism-400 rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-prism-500;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HIGH CONTRAST MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.high-contrast {
+  --color-text: #ffffff;
+  --color-bg: #000000;
+  --color-border: #ffffff;
+  --color-focus: #ffff00;
+}
+
+.high-contrast body {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.high-contrast a {
+  color: #00ffff !important;
+}
+
+.high-contrast button,
+.high-contrast [role="button"] {
+  border: 2px solid #ffffff !important;
+}
+
+.high-contrast :focus-visible {
+  outline-color: #ffff00 !important;
+}
