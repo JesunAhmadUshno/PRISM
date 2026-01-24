@@ -2,11 +2,36 @@
  * PRISM Global Styles
  * 
  * TailwindCSS base with custom accessibility enhancements.
+ * Modern glassmorphism design with smooth animations.
  */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CSS CUSTOM PROPERTIES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  --gradient-mesh: radial-gradient(at 40% 20%, hsla(221,83%,67%,0.3) 0px, transparent 50%),
+                   radial-gradient(at 80% 0%, hsla(189,100%,56%,0.2) 0px, transparent 50%),
+                   radial-gradient(at 0% 50%, hsla(355,100%,80%,0.15) 0px, transparent 50%),
+                   radial-gradient(at 80% 50%, hsla(340,100%,76%,0.15) 0px, transparent 50%),
+                   radial-gradient(at 0% 100%, hsla(269,100%,77%,0.2) 0px, transparent 50%);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+}
+
+.dark {
+  --glass-bg: rgba(15, 23, 42, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    BASE STYLES
@@ -73,7 +98,6 @@
   select,
   a {
     min-height: 44px;
-    min-width: 44px;
   }
 
   /* Link styles with good contrast */
@@ -87,8 +111,8 @@
   }
 
   /* Heading hierarchy */
-  h1 { @apply text-4xl font-bold; }
-  h2 { @apply text-3xl font-bold; }
+  h1 { @apply text-4xl font-bold tracking-tight; }
+  h2 { @apply text-3xl font-bold tracking-tight; }
   h3 { @apply text-2xl font-semibold; }
   h4 { @apply text-xl font-semibold; }
   h5 { @apply text-lg font-medium; }
@@ -96,8 +120,8 @@
 
   /* Code blocks */
   code {
-    @apply bg-prism-100 dark:bg-prism-800 px-1 py-0.5 rounded text-sm;
-    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+    @apply bg-prism-100 dark:bg-prism-800 px-1.5 py-0.5 rounded-md text-sm;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
   }
 
   /* Tables */
@@ -106,11 +130,11 @@
   }
 
   th, td {
-    @apply p-3 text-left border-b border-prism-200 dark:border-prism-700;
+    @apply p-4 text-left border-b border-prism-200 dark:border-prism-700;
   }
 
   th {
-    @apply font-semibold bg-prism-100 dark:bg-prism-800;
+    @apply font-semibold bg-prism-100/50 dark:bg-prism-800/50;
   }
 }
 
@@ -127,62 +151,194 @@
     z-index: 9999;
   }
 
-  /* Card component */
+  /* Glass card component */
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    @apply rounded-2xl;
+  }
+
+  /* Solid card component */
   .card {
-    @apply bg-white dark:bg-prism-900 rounded-prism shadow-lg p-6;
-    @apply border border-prism-200 dark:border-prism-700;
+    @apply bg-white dark:bg-slate-800 rounded-2xl shadow-xl;
+    @apply border border-slate-200 dark:border-slate-700;
+  }
+
+  /* Gradient background */
+  .gradient-bg {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  }
+
+  .dark .gradient-bg {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  }
+
+  /* Mesh gradient background */
+  .mesh-bg {
+    background-color: #f8fafc;
+    background-image: var(--gradient-mesh);
+  }
+
+  .dark .mesh-bg {
+    background-color: #0f172a;
   }
 
   /* Button variants */
   .btn {
-    @apply inline-flex items-center justify-center;
-    @apply px-4 py-2 rounded-prism font-medium;
-    @apply transition-colors duration-200;
+    @apply inline-flex items-center justify-center gap-2;
+    @apply px-6 py-3 rounded-xl font-semibold;
+    @apply transition-all duration-200 ease-out;
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-prism-500 focus-visible:ring-offset-2;
-    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
+    @apply active:scale-95;
   }
 
   .btn-primary {
-    @apply btn bg-prism-600 text-white;
-    @apply hover:bg-prism-700;
-    @apply dark:bg-prism-500 dark:hover:bg-prism-600;
+    @apply btn;
+    background: var(--gradient-primary);
+    @apply text-white shadow-lg shadow-purple-500/25;
+    @apply hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-0.5;
   }
 
   .btn-secondary {
-    @apply btn bg-prism-200 text-prism-900;
-    @apply hover:bg-prism-300;
-    @apply dark:bg-prism-700 dark:text-prism-100 dark:hover:bg-prism-600;
+    @apply btn bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white;
+    @apply border border-slate-200 dark:border-slate-700;
+    @apply hover:bg-slate-200 dark:hover:bg-slate-700;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-slate-600 dark:text-slate-300;
+    @apply hover:bg-slate-100 dark:hover:bg-slate-800;
   }
 
   /* Input styles */
   .input {
-    @apply w-full px-4 py-2 rounded-prism;
-    @apply bg-white dark:bg-prism-900;
-    @apply border border-prism-300 dark:border-prism-600;
-    @apply text-prism-900 dark:text-prism-100;
-    @apply placeholder-prism-400 dark:placeholder-prism-500;
+    @apply w-full px-4 py-3 rounded-xl;
+    @apply bg-white dark:bg-slate-900;
+    @apply border-2 border-slate-200 dark:border-slate-700;
+    @apply text-slate-900 dark:text-slate-100;
+    @apply placeholder-slate-400 dark:placeholder-slate-500;
     @apply focus:outline-none focus:ring-2 focus:ring-prism-500 focus:border-transparent;
+    @apply transition-all duration-200;
+  }
+
+  /* Badge styles */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .badge-primary {
+    @apply badge bg-prism-100 dark:bg-prism-900 text-prism-700 dark:text-prism-300;
+  }
+
+  .badge-success {
+    @apply badge bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300;
+  }
+
+  .badge-warning {
+    @apply badge bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300;
+  }
+
+  .badge-error {
+    @apply badge bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300;
   }
 
   /* Alert/notification styles */
   .alert {
-    @apply p-4 rounded-prism border;
+    @apply p-4 rounded-xl border-l-4;
   }
 
   .alert-info {
-    @apply alert bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200;
+    @apply alert bg-blue-50 dark:bg-blue-950/50 border-blue-500 text-blue-800 dark:text-blue-200;
   }
 
   .alert-success {
-    @apply alert bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200;
+    @apply alert bg-emerald-50 dark:bg-emerald-950/50 border-emerald-500 text-emerald-800 dark:text-emerald-200;
   }
 
   .alert-warning {
-    @apply alert bg-yellow-50 dark:bg-yellow-950 border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200;
+    @apply alert bg-amber-50 dark:bg-amber-950/50 border-amber-500 text-amber-800 dark:text-amber-200;
   }
 
   .alert-error {
-    @apply alert bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200;
+    @apply alert bg-red-50 dark:bg-red-950/50 border-red-500 text-red-800 dark:text-red-200;
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply glass-card p-6 flex flex-col;
+  }
+
+  .stat-value {
+    @apply text-3xl font-bold bg-gradient-to-r from-prism-600 to-purple-600 bg-clip-text text-transparent;
+  }
+
+  .stat-label {
+    @apply text-sm text-slate-500 dark:text-slate-400 mt-1;
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    @apply h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply h-full rounded-full transition-all duration-500 ease-out;
+    background: var(--gradient-primary);
+  }
+
+  /* Animated gradient border */
+  .gradient-border {
+    position: relative;
+    background: linear-gradient(var(--glass-bg), var(--glass-bg)) padding-box,
+                linear-gradient(135deg, #667eea, #764ba2, #f093fb, #f5576c) border-box;
+    border: 2px solid transparent;
+    border-radius: 1rem;
+  }
+
+  /* Floating animation */
+  .float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+
+  /* Pulse glow */
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(102, 126, 234, 0.6); }
+  }
+
+  /* Shimmer loading */
+  .shimmer {
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  /* Spin animation */
+  .spin-slow {
+    animation: spin 3s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 }
 
@@ -248,11 +404,21 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-prism-400 rounded-full;
+    @apply bg-prism-300 dark:bg-prism-600 rounded-full;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-prism-500;
+    @apply bg-prism-400 dark:bg-prism-500;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-prism-600 via-purple-600 to-pink-600 bg-clip-text text-transparent;
+  }
+
+  /* Text balance */
+  .text-balance {
+    text-wrap: balance;
   }
 }
 

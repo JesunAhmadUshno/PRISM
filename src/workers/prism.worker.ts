@@ -13,18 +13,7 @@
  * @security CRITICAL - All data processing happens here
  */
 
-/// <reference lib="webworker" />
-
-import type { 
-  WorkerMessage, 
-  WorkerProcessPayload, 
-  WorkerResultPayload,
-  ProcessingProgress 
-} from '@/types';
-
 // Pyodide types
-declare const loadPyodide: () => Promise<PyodideInterface>;
-
 interface PyodideInterface {
   loadPackage: (packages: string[]) => Promise<void>;
   runPython: (code: string) => unknown;
@@ -33,6 +22,25 @@ interface PyodideInterface {
     get: (name: string) => unknown;
     set: (name: string, value: unknown) => void;
   };
+}
+
+interface WorkerProcessPayload {
+  fileContent: string;
+  fileType: string;
+  fileName: string;
+}
+
+interface ProcessingProgress {
+  status: string;
+  progress: number;
+  message: string;
+  accessibleMessage: string;
+}
+
+interface ProcessingError {
+  code: string;
+  message: string;
+  recoverable: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

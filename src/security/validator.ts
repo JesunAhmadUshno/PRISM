@@ -17,7 +17,7 @@ import type { FileMetadata, FileValidationResult, SupportedFileType } from '@/ty
  * Maximum file size: 50MB
  * Prevents memory exhaustion attacks
  */
-export const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
+export const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB in bytes
 
 /**
  * Minimum file size: 10 bytes

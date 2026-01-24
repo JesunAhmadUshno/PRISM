@@ -26,6 +26,34 @@ interface FileUploaderProps {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// ICONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const UploadCloudIcon = () => (
+  <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+  </svg>
+);
+
+const FileSpreadsheetIcon = () => (
+  <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+  </svg>
+);
+
+const CheckCircleIcon = () => (
+  <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const XCircleIcon = () => (
+  <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
 // COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -92,18 +120,32 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   // Determine visual state
   const getStateStyles = () => {
     if (isProcessing) {
-      return 'border-prism-400 bg-prism-50 dark:bg-prism-900 cursor-wait opacity-60';
+      return 'border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 cursor-wait opacity-60';
     }
     if (isDragReject) {
-      return 'border-red-500 bg-red-50 dark:bg-red-950 border-dashed';
+      return 'border-red-400 bg-red-50 dark:bg-red-950/50 border-dashed scale-[1.02]';
     }
     if (isDragAccept) {
-      return 'border-green-500 bg-green-50 dark:bg-green-950 border-dashed';
+      return 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border-dashed scale-[1.02]';
     }
     if (isDragActive) {
-      return 'border-prism-500 bg-prism-50 dark:bg-prism-900 border-dashed';
+      return 'border-prism-400 bg-prism-50 dark:bg-prism-950/50 border-dashed scale-[1.02]';
     }
-    return 'border-prism-300 dark:border-prism-700 hover:border-prism-500 hover:bg-prism-50 dark:hover:bg-prism-900';
+    return 'border-slate-200 dark:border-slate-700 hover:border-prism-400 hover:bg-slate-50 dark:hover:bg-slate-800/50';
+  };
+
+  const getIconColor = () => {
+    if (isDragReject) return 'text-red-400';
+    if (isDragAccept) return 'text-emerald-400';
+    if (isDragActive) return 'text-prism-400';
+    return 'text-slate-400 dark:text-slate-500';
+  };
+
+  const renderIcon = () => {
+    if (isDragReject) return <XCircleIcon />;
+    if (isDragAccept) return <CheckCircleIcon />;
+    if (isProcessing) return <FileSpreadsheetIcon />;
+    return <UploadCloudIcon />;
   };
 
   return (
@@ -114,10 +156,11 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         id={`${id}-dropzone`}
         className={clsx(
           'relative flex flex-col items-center justify-center',
-          'w-full min-h-[200px] p-8',
-          'border-2 rounded-prism transition-all duration-200',
-          'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-prism-500',
-          'cursor-pointer',
+          'w-full min-h-[280px] p-8',
+          'border-2 rounded-2xl transition-all duration-300 ease-out',
+          'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-prism-500 focus-visible:ring-offset-2',
+          'cursor-pointer group',
+          'bg-white dark:bg-slate-900/50',
           getStateStyles()
         )}
         role="button"
@@ -130,18 +173,19 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         {/* Upload Icon */}
         <div 
           className={clsx(
-            'text-6xl mb-4 transition-transform duration-200',
-            isDragActive && 'scale-110'
+            'mb-6 transition-all duration-300',
+            getIconColor(),
+            isDragActive ? 'scale-110' : 'group-hover:scale-105 group-hover:text-prism-500'
           )}
           aria-hidden="true"
         >
-          {isDragReject ? '❌' : isDragAccept ? '✅' : isProcessing ? '⏳' : '📊'}
+          {renderIcon()}
         </div>
 
         {/* Primary Label */}
         <p
           id={`${id}-label`}
-          className="text-xl font-semibold text-prism-900 dark:text-prism-100 text-center mb-2"
+          className="text-xl font-semibold text-slate-900 dark:text-slate-100 text-center mb-2"
         >
           {isProcessing
             ? 'Processing your data...'
@@ -149,26 +193,33 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
             ? isDragReject
               ? 'This file type is not supported'
               : 'Drop your file here'
-            : 'Drag & drop your data file here'}
+            : 'Drag & drop your data file'}
         </p>
 
         {/* Secondary Description */}
         <p
           id={`${id}-description`}
-          className="text-base text-prism-600 dark:text-prism-400 text-center mb-4"
+          className="text-base text-slate-500 dark:text-slate-400 text-center mb-6"
         >
           {isProcessing
             ? 'Please wait while we analyze your data'
-            : 'or click to browse files'}
+            : 'or click anywhere to browse'}
         </p>
 
-        {/* Supported Formats */}
-        <p
-          id={`${id}-formats`}
-          className="text-sm text-prism-500 dark:text-prism-500 text-center"
-        >
-          Supported formats: CSV, Excel (.xlsx), XML • Max size: {MAX_FILE_SIZE / (1024 * 1024)}MB
-        </p>
+        {/* Supported Formats - Badges */}
+        <div id={`${id}-formats`} className="flex flex-wrap items-center justify-center gap-2">
+          {['CSV', 'Excel (.xlsx)', 'XML'].map((format) => (
+            <span 
+              key={format}
+              className="px-3 py-1 rounded-full text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+            >
+              {format}
+            </span>
+          ))}
+          <span className="px-3 py-1 rounded-full text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+            Max {MAX_FILE_SIZE / (1024 * 1024)}MB
+          </span>
+        </div>
 
         {/* Keyboard Instructions (visible on focus) */}
         <p className="sr-only">
@@ -182,18 +233,13 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         type="button"
         onClick={open}
         disabled={isProcessing}
-        className={clsx(
-          'w-full mt-4 py-3 px-6',
-          'bg-prism-600 hover:bg-prism-700 text-white',
-          'dark:bg-prism-500 dark:hover:bg-prism-600',
-          'rounded-prism font-medium text-base',
-          'focus-visible-ring transition-colors',
-          'disabled:opacity-50 disabled:cursor-not-allowed',
-          'touch-target'
-        )}
+        className="btn-primary w-full mt-4"
         aria-describedby={`${id}-formats`}
       >
-        {isProcessing ? 'Processing...' : 'Browse Files'}
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+        </svg>
+        {isProcessing ? 'Processing...' : 'Select File'}
       </button>
 
       {/* Live Region for Screen Reader Announcements */}
@@ -205,12 +251,6 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       >
         {announcement}
       </div>
-
-      {/* Security Notice */}
-      <p className="mt-4 text-sm text-center text-prism-500 dark:text-prism-500">
-        🔒 <strong>Your data stays private.</strong> All processing happens locally in your browser.
-        No data is uploaded to any server.
-      </p>
     </div>
   );
 };

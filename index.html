@@ -9,18 +9,18 @@
          
          Security Design Principles:
          1. default-src 'none' - Deny by default, allow explicitly
-         2. No external fonts, analytics, or tracking
-         3. Only Pyodide CDN allowed for WASM binaries
-         4. No form submissions, no framing, no plugins
+         2. Only Pyodide CDN allowed for WASM binaries
+         3. No form submissions, no framing, no plugins
          
          Last Security Audit: 2026-01-24
          ═══════════════════════════════════════════════════════════════════════ -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'none';
-        script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net/pyodide/;
+        script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net/pyodide/ https://cdn.sheetjs.com/;
         style-src 'self' 'unsafe-inline';
+        style-src-elem 'self' 'unsafe-inline';
         img-src 'self' data: blob:;
-        font-src 'self';
+        font-src 'self' data:;
         connect-src 'self' https://cdn.jsdelivr.net/pyodide/;
         worker-src 'self' blob:;
         child-src 'self' blob:;
@@ -28,14 +28,12 @@
         object-src 'none';
         base-uri 'self';
         form-action 'none';
-        frame-ancestors 'none';
         upgrade-insecure-requests;
         block-all-mixed-content;
     ">
     
-    <!-- Additional Security Headers (enforced by meta) -->
+    <!-- Additional Security Headers -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="X-Frame-Options" content="DENY" />
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
     
     <!-- Prevent DNS prefetching to external domains -->

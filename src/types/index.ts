@@ -169,7 +169,9 @@ export type WorkerMessageType =
   | 'ANALYZE_DATA'
   | 'PROGRESS'
   | 'RESULT'
-  | 'ERROR';
+  | 'ERROR'
+  | 'CUSTOM_ANALYSIS'
+  | 'CUSTOM_ANALYSIS_RESULT';
 
 export interface WorkerMessage<T = unknown> {
   readonly type: WorkerMessageType;
@@ -221,14 +223,41 @@ export interface SonificationConfig {
 // APPLICATION STATE TYPES
 // ═══════════════════════════════════════════════════════════════════════════
 
+// Multi-dataset support
+export type JoinType = 'inner' | 'left' | 'right' | 'outer';
+
+export interface Dataset {
+  readonly id: string;
+  readonly name: string;
+  readonly metadata: FileMetadata;
+  readonly content: string;
+  readonly columns: readonly string[];
+  readonly rowCount: number;
+  readonly isActive: boolean;
+}
+
+export interface DatasetLink {
+  readonly id: string;
+  readonly leftDatasetId: string;
+  readonly rightDatasetId: string;
+  readonly leftColumn: string;
+  readonly rightColumn: string;
+  readonly joinType: JoinType;
+}
+
 export interface PrismState {
-  // File state
+  // File state (legacy single file)
   file: {
     metadata: FileMetadata | null;
     content: string | null;
     validationStatus: 'pending' | 'valid' | 'invalid';
     validationError: string | null;
   };
+  
+  // Multi-dataset state
+  datasets: Dataset[];
+  datasetLinks: DatasetLink[];
+  activeDatasetId: string | null;
   
   // Processing state
   processing: ProcessingProgress;
@@ -242,6 +271,9 @@ export interface PrismState {
     chartConfigs: readonly ChartConfig[];
   };
   
+  // Custom analysis results
+  customAnalysisResults: CustomAnalysisResult | null;
+  
   // UI state
   accessibility: AccessibilitySettings;
   activeChartIndex: number;
@@ -253,4 +285,82 @@ export interface PrismState {
   setAccessibility: (settings: Partial<AccessibilitySettings>) => void;
   setActiveChart: (index: number) => void;
   reset: () => void;
+  
+  // Multi-dataset actions
+  addDataset: (file: File) => Promise<void>;
+  removeDataset: (id: string) => void;
+  setActiveDataset: (id: string) => void;
+  addDatasetLink: (link: Omit<DatasetLink, 'id'>) => void;
+  removeDatasetLink: (id: string) => void;
+  processLinkedDatasets: () => Promise<void>;
+  
+  // Custom analysis actions
+  runCustomAnalysis: (config: CustomAnalysisConfig) => Promise<CustomAnalysisResult>;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CUSTOM ANALYSIS TYPES
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type StatisticalTestType =
+  | 'one_sample_t'
+  | 'independent_t'
+  | 'paired_t'
+  | 'one_way_anova'
+  | 'two_way_anova'
+  | 'chi_square_ind'
+  | 'chi_square_gof'
+  | 'fisher_exact'
+  | 'mann_whitney'
+  | 'wilcoxon'
+  | 'kruskal_wallis'
+  | 'pearson'
+  | 'spearman'
+  | 'linear_regression'
+  | 'f_test'
+  | 'levene'
+  | 'shapiro_wilk';
+
+export type PreprocessingOperation =
+  | 'remove_nulls'
+  | 'fill_mean'
+  | 'fill_median'
+  | 'fill_mode'
+  | 'normalize'
+  | 'standardize'
+  | 'log_transform'
+  | 'remove_outliers'
+  | 'encode_categorical'
+  | 'remove_duplicates';
+
+export interface CustomAnalysisConfig {
+  readonly type: 'statistical_test' | 'visualization' | 'preprocessing' | 'ml_model';
+  readonly testId?: StatisticalTestType;
+  readonly chartType?: ChartType;
+  readonly operations?: PreprocessingOperation[];
+  readonly columns?: string[];
+  readonly modelType?: string;
+  readonly targetColumn?: string;
+  readonly parameters?: Record<string, unknown>;
+}
+
+export interface StatisticalTestResult {
+  readonly testName: string;
+  readonly statistic: number;
+  readonly pValue: number;
+  readonly degreesOfFreedom?: number;
+  readonly confidenceInterval?: [number, number];
+  readonly effectSize?: number;
+  readonly interpretation: string;
+  readonly significant: boolean;
+}
+
+export interface CustomAnalysisResult {
+  readonly type: 'statistical_test' | 'visualization' | 'preprocessing' | 'ml_model';
+  readonly success: boolean;
+  readonly testResult?: StatisticalTestResult;
+  readonly chartConfig?: ChartConfig;
+  readonly preprocessedData?: string;
+  readonly modelMetrics?: Record<string, number>;
+  readonly error?: string;
 }

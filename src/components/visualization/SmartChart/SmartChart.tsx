@@ -519,25 +519,36 @@ export const SmartChart: React.FC<SmartChartProps> = ({
   return (
     <section
       className={clsx(
-        'bg-white dark:bg-prism-950 rounded-prism shadow-lg p-6',
-        'border border-prism-200 dark:border-prism-800',
+        'glass-card p-6 transition-all duration-200 hover:shadow-xl',
         className
       )}
       aria-labelledby={`${chartId}-title`}
       aria-describedby={`${chartId}-summary`}
     >
-      {/* Chart Title */}
-      <h3
-        id={`${chartId}-title`}
-        className="text-xl font-semibold text-prism-900 dark:text-prism-100 mb-2"
-      >
-        {config.title}
-      </h3>
+      {/* Chart Header */}
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3
+            id={`${chartId}-title`}
+            className="text-xl font-semibold text-slate-900 dark:text-slate-100"
+          >
+            {config.title}
+          </h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            {config.type.charAt(0).toUpperCase() + config.type.slice(1)} Chart • {config.data.length} data points
+          </p>
+        </div>
+        
+        {/* Chart Type Badge */}
+        <span className="badge-primary">
+          {config.type}
+        </span>
+      </div>
 
       {/* Accessible Summary (visible to all, optimized for screen readers) */}
       <p
         id={`${chartId}-summary`}
-        className="text-base text-prism-700 dark:text-prism-300 mb-4"
+        className="text-base text-slate-600 dark:text-slate-400 mb-6 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50"
       >
         {insightText || accessibleSummary}
       </p>
@@ -546,7 +557,7 @@ export const SmartChart: React.FC<SmartChartProps> = ({
       <div
         role="img"
         aria-label={accessibleSummary}
-        className="w-full"
+        className="w-full rounded-xl overflow-hidden bg-white dark:bg-slate-900/50 p-4"
         style={{ height }}
       >
         <ResponsiveContainer width="100%" height="100%">
