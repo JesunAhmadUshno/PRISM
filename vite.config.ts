@@ -32,8 +32,8 @@ export default defineConfig({
     },
   },
 
-  // GitHub Pages deployment base
-  base: './',
+  // GitHub Pages deployment base (repo name)
+  base: '/PRISM/',
 
   build: {
     // Target modern browsers for smaller bundles
