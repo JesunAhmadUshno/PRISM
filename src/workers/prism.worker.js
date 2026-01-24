@@ -459,14 +459,18 @@ def run_statistical_test(data, test_id, columns, parameters=None):
         def get_numeric(col):
             return pd.to_numeric(df[col], errors='coerce').dropna()
         
-        # Helper to convert numpy types to native Python types
+        # Helper to convert numpy types to native Python types and handle NaN/Inf
         def to_python(val):
             if val is None:
                 return None
             if isinstance(val, (np.bool_, np.integer, np.floating)):
-                return val.item()
+                val = val.item()
+            if isinstance(val, float):
+                # Handle NaN and Infinity - not valid JSON
+                if np.isnan(val) or np.isinf(val):
+                    return None
             if isinstance(val, np.ndarray):
-                return val.tolist()
+                return [to_python(v) for v in val.tolist()]
             return val
         
         # Normality Tests
