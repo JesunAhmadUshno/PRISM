@@ -13,7 +13,7 @@
 import React, { useCallback, useId, useState } from 'react';
 import { useDropzone, FileRejection } from 'react-dropzone';
 import { clsx } from 'clsx';
-import { MAX_FILE_SIZE, SUPPORTED_TYPES } from '@/security/validator';
+import { MAX_FILE_SIZE } from '@/security/validator';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES

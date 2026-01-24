@@ -33,7 +33,7 @@ import {
   Area,
 } from 'recharts';
 import { clsx } from 'clsx';
-import type { ChartConfig, ChartDataPoint, ChartType } from '@/types';
+import type { ChartConfig, ChartDataPoint } from '@/types';
 import { sanitizeValue } from '@/security/sanitizer';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -169,7 +169,7 @@ const AccessibleDataTable: React.FC<{
   xAxisLabel: string;
   yAxisLabel: string;
   chartId: string;
-}> = ({ data, xAxisLabel, yAxisLabel, chartId }) => {
+}> = ({ data, xAxisLabel, yAxisLabel: _yAxisLabel, chartId }) => {
   const columns = useMemo(() => {
     if (!data[0]) return [];
     return Object.keys(data[0]);

@@ -93,7 +93,8 @@ export function sanitizeHTML(dirty: string): string {
     console.warn('[Sanitizer] Non-string input received, converting');
     dirty = String(dirty);
   }
-  return DOMPurify.sanitize(dirty, STRICT_CONFIG);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return String(DOMPurify.sanitize(dirty, STRICT_CONFIG as any));
 }
 
 /**
@@ -108,7 +109,8 @@ export function sanitizeToPlainText(dirty: string): string {
     dirty = String(dirty);
   }
   // First sanitize, then strip tags
-  const sanitized = DOMPurify.sanitize(dirty, PLAIN_TEXT_CONFIG);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sanitized = String(DOMPurify.sanitize(dirty, PLAIN_TEXT_CONFIG as any));
   // Additional cleanup for any remaining entities
   const textarea = document.createElement('textarea');
   textarea.innerHTML = sanitized;
