@@ -651,6 +651,100 @@ def run_statistical_test(data, test_id, columns, parameters=None):
             result['significant'] = bool(p < alpha)
             result['interpretation'] = f"Linear regression: y = {slope:.3f}x + {intercept:.3f}. R²={r**2:.3f} ({r**2*100:.1f}% variance explained). {'Significant relationship' if p < alpha else 'No significant relationship'} (p={p:.4f})."
         
+        # Two-way ANOVA (using statsmodels approach with scipy)
+        elif test_id == 'two_way_anova':
+            if len(columns) < 3:
+                return json.dumps({"success": False, "error": "Two-way ANOVA requires 1 numeric column and 2 categorical columns"})
+            numeric_col = columns[0]
+            factor1 = columns[1]
+            factor2 = columns[2]
+            # Perform separate one-way ANOVAs for each factor as approximation
+            groups1 = df[factor1].dropna().unique()
+            group_data1 = [get_numeric(numeric_col)[df[factor1] == g].dropna() for g in groups1]
+            group_data1 = [g for g in group_data1 if len(g) > 0]
+            groups2 = df[factor2].dropna().unique()
+            group_data2 = [get_numeric(numeric_col)[df[factor2] == g].dropna() for g in groups2]
+            group_data2 = [g for g in group_data2 if len(g) > 0]
+            if len(group_data1) < 2 or len(group_data2) < 2:
+                return json.dumps({"success": False, "error": "Need at least 2 groups for each factor"})
+            stat1, p1 = scipy_stats.f_oneway(*group_data1)
+            stat2, p2 = scipy_stats.f_oneway(*group_data2)
+            result['statistic'] = to_python(stat1)
+            result['pValue'] = to_python(min(p1, p2))
+            result['significant'] = bool(p1 < alpha or p2 < alpha)
+            result['interpretation'] = f"Two-way ANOVA: Factor '{factor1}' (F={stat1:.3f}, p={p1:.4f}) {'significant' if p1 < alpha else 'not significant'}. Factor '{factor2}' (F={stat2:.3f}, p={p2:.4f}) {'significant' if p2 < alpha else 'not significant'}."
+        
+        # Chi-square goodness-of-fit
+        elif test_id == 'chi_square_gof':
+            if len(columns) < 1:
+                return json.dumps({"success": False, "error": "Chi-square GoF requires 1 categorical column"})
+            observed = df[columns[0]].value_counts()
+            n = len(observed)
+            expected = [observed.sum() / n] * n  # Uniform expected distribution
+            stat, p = scipy_stats.chisquare(observed, expected)
+            result['statistic'] = to_python(stat)
+            result['pValue'] = to_python(p)
+            result['degreesOfFreedom'] = int(n - 1)
+            result['significant'] = bool(p < alpha)
+            result['interpretation'] = f"Chi-square Goodness-of-Fit: Distribution of '{columns[0]}' {'significantly differs from' if p < alpha else 'does not significantly differ from'} uniform distribution (χ²={stat:.3f}, df={n-1}, p={p:.4f})."
+        
+        # Fisher's exact test
+        elif test_id == 'fisher_exact':
+            if len(columns) < 2:
+                return json.dumps({"success": False, "error": "Fisher's exact test requires 2 categorical columns"})
+            contingency = pd.crosstab(df[columns[0]], df[columns[1]])
+            if contingency.shape != (2, 2):
+                # Reduce to 2x2 by taking top 2 categories from each
+                contingency = contingency.iloc[:2, :2]
+            if contingency.shape != (2, 2):
+                return json.dumps({"success": False, "error": "Fisher's exact test requires a 2x2 contingency table (2 categories each)"})
+            odds_ratio, p = scipy_stats.fisher_exact(contingency)
+            result['statistic'] = to_python(odds_ratio)
+            result['pValue'] = to_python(p)
+            result['significant'] = bool(p < alpha)
+            result['interpretation'] = f"Fisher's exact test: Odds ratio = {odds_ratio:.3f}. '{columns[0]}' and '{columns[1]}' {'are significantly associated' if p < alpha else 'are not significantly associated'} (p={p:.4f})."
+        
+        # Wilcoxon signed-rank test
+        elif test_id == 'wilcoxon':
+            if len(columns) < 2:
+                return json.dumps({"success": False, "error": "Wilcoxon signed-rank requires 2 paired numeric columns"})
+            col1 = get_numeric(columns[0])
+            col2 = get_numeric(columns[1])
+            valid_idx = col1.index.intersection(col2.index)
+            col1_valid = col1.loc[valid_idx]
+            col2_valid = col2.loc[valid_idx]
+            # Remove pairs where difference is 0
+            diff = col1_valid - col2_valid
+            nonzero_mask = diff != 0
+            if nonzero_mask.sum() < 1:
+                return json.dumps({"success": False, "error": "All differences are zero, cannot perform test"})
+            stat, p = scipy_stats.wilcoxon(col1_valid[nonzero_mask], col2_valid[nonzero_mask])
+            result['statistic'] = to_python(stat)
+            result['pValue'] = to_python(p)
+            result['significant'] = bool(p < alpha)
+            result['interpretation'] = f"Wilcoxon signed-rank: Paired differences between '{columns[0]}' and '{columns[1]}' {'are statistically significant' if p < alpha else 'are not statistically significant'} (W={stat:.1f}, p={p:.4f})."
+        
+        # F-test for equality of variances
+        elif test_id == 'f_test':
+            if len(columns) < 2:
+                return json.dumps({"success": False, "error": "F-test requires 2 numeric columns"})
+            col1 = get_numeric(columns[0]).dropna()
+            col2 = get_numeric(columns[1]).dropna()
+            var1 = col1.var()
+            var2 = col2.var()
+            if var2 == 0:
+                return json.dumps({"success": False, "error": "Variance of second column is zero"})
+            f_stat = var1 / var2
+            df1 = len(col1) - 1
+            df2 = len(col2) - 1
+            # Two-tailed p-value
+            p = 2 * min(scipy_stats.f.cdf(f_stat, df1, df2), 1 - scipy_stats.f.cdf(f_stat, df1, df2))
+            result['statistic'] = to_python(f_stat)
+            result['pValue'] = to_python(p)
+            result['degreesOfFreedom'] = f"{df1}, {df2}"
+            result['significant'] = bool(p < alpha)
+            result['interpretation'] = f"F-test: Variance ratio = {f_stat:.3f}. Variances of '{columns[0]}' and '{columns[1]}' {'are significantly different' if p < alpha else 'are not significantly different'} (F={f_stat:.3f}, p={p:.4f})."
+        
         else:
             return json.dumps({"success": False, "error": f"Unknown test: {test_id}"})
         
