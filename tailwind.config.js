@@ -19,6 +19,65 @@ export default {
        * - Distinct colors for colorblind accessibility
        */
       colors: {
+        /**
+         * REFRACTION: the neutral ramp.
+         *
+         * The components reference slate-* several dozen times, so redefining
+         * the ramp itself restyles the whole application without editing a
+         * single component. That is deliberate: rewriting class names across
+         * five files to change a colour is how regressions get introduced.
+         *
+         * Cooler and deeper than Tailwind's stock slate, with a blue violet
+         * undertone so the ground reads as deep glass rather than flat ink,
+         * matching the marketing site in web/styles.css.
+         *
+         * Contrast measured with the WCAG relative-luminance formula, not
+         * estimated:
+         *   slate-900 on white      18.88:1  AAA
+         *   slate-100 on slate-900  16.58:1  AAA
+         *   slate-300 on slate-900  10.75:1  AAA
+         *   slate-600 on white       9.49:1  AAA
+         *   slate-400 on slate-900    6.36:1  AA   secondary text only
+         *   slate-500 on white        5.93:1  AA   secondary text only
+         *
+         * The two AA pairs are the muted-text roles. They clear AA comfortably
+         * but not AAA, so they must not carry anything a reader has to read to
+         * use the product. That is a real constraint, and it is why the README
+         * no longer claims AAA conformance.
+         *
+         * Spectrum accents on slate-900, same method:
+         *   amber 11.31  cyan 10.45  green 9.82  blue 7.43  rose 7.02  AAA
+         *   violet 6.94  AA, so violet is for graphics and borders, not text.
+         */
+        slate: {
+          50:  '#f7f8fc',
+          100: '#eef0f7',
+          200: '#dde1ee',
+          300: '#bcc3da',
+          400: '#8c95b4',
+          500: '#5a6382',
+          600: '#3c4560',
+          700: '#232842',
+          800: '#12162a',
+          900: '#0d1020',
+          950: '#05060d',
+        },
+
+        /**
+         * The spectrum. A prism reveals the colours already inside the light
+         * without consuming it, which is exactly what this product does with a
+         * dataset. Used in WAVELENGTH ORDER wherever something is being
+         * separated into parts, never decoratively at random.
+         */
+        spectrum: {
+          violet: '#a78bfa',
+          blue:   '#60a5fa',
+          cyan:   '#22d3ee',
+          green:  '#34d399',
+          amber:  '#fbbf24',
+          rose:   '#fb7185',
+        },
+
         // Primary brand colors - passes AAA contrast
         prism: {
           50: '#f0f9ff',
