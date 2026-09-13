@@ -25,6 +25,7 @@
   'use strict';
 
   var doc = document;
+  var win = window;
 
   /** @param {string} sel @param {ParentNode} [root] */
   function $(sel, root) { return (root || doc).querySelector(sel); }
@@ -639,11 +640,240 @@
     if (booted) { return; }
     booted = true;
 
+  /* ---------------------------------------------------------------------
+     THE PRISM
+
+     A white beam crosses the hero, strikes a glass triangle, and leaves as a
+     spectrum. It is the product's own metaphor: the light is separated into
+     what it always contained, and nothing is consumed doing it.
+
+     Written by hand on a 2D canvas rather than pulled from a library, because
+     this page argues that nothing is fetched from anywhere and a page that
+     downloaded an animation engine to say so would be lying.
+
+     It is decorative. It is aria-hidden, it never receives pointer events, and
+     it does not run at all under prefers-reduced-motion.
+     ------------------------------------------------------------------ */
+  function startPrism() {
+    var canvas = doc.getElementById('prism-canvas');
+    if (!canvas || !canvas.getContext) return;
+
+    var reduce = win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)');
+    if (reduce && reduce.matches) return;
+
+    // getContext returns null where canvas is unsupported, but it can also
+    // throw outright in browsers with canvas fingerprinting protection. Handle
+    // both, so a privacy feature on the visitor's side cannot break a page
+    // whose entire argument is that it respects privacy.
+    var ctx = null;
+    try {
+      ctx = canvas.getContext('2d');
+    } catch (e) {
+      return;
+    }
+    if (!ctx) return;
+
+    // Wavelength order, matching --sp-1 through --sp-6 in styles.css.
+    var SPECTRUM = ['#a78bfa', '#60a5fa', '#22d3ee', '#34d399', '#fbbf24', '#fb7185'];
+
+    var w = 0, h = 0, dpr = 1;
+    var pointer = { x: 0.5, y: 0.5 };   // normalised, follows the cursor
+    var eased = { x: 0.5, y: 0.5 };     // trails the pointer, so motion is soft
+    var t = 0;
+    var raf = 0;
+
+    function resize() {
+      var rect = canvas.getBoundingClientRect();
+      dpr = Math.min(win.devicePixelRatio || 1, 2);
+      w = Math.max(1, Math.round(rect.width));
+      h = Math.max(1, Math.round(rect.height));
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function onPointer(e) {
+      var rect = canvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      pointer.x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+      pointer.y = Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height));
+    }
+
+    function draw() {
+      t += 0.005;
+
+      // Trail the cursor rather than snapping to it.
+      eased.x += (pointer.x - eased.x) * 0.045;
+      eased.y += (pointer.y - eased.y) * 0.045;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // The glass sits right of centre, drifting gently so the scene breathes
+      // even when the cursor is still.
+      var gx = w * 0.62 + Math.sin(t * 0.8) * 10;
+      var gy = h * (0.34 + eased.y * 0.30) + Math.cos(t * 0.6) * 8;
+      var size = Math.max(58, Math.min(w, h) * 0.17);
+
+      // Incoming beam. Its angle answers to the cursor, so the whole scene
+      // reacts to a visitor who has not clicked anything yet.
+      var originY = h * (0.18 + eased.y * 0.5);
+      var originX = -w * 0.05;
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+
+      // White beam in.
+      var beam = ctx.createLinearGradient(originX, originY, gx, gy);
+      beam.addColorStop(0, 'rgba(255,255,255,0)');
+      beam.addColorStop(0.55, 'rgba(226,232,240,0.16)');
+      beam.addColorStop(1, 'rgba(255,255,255,0.30)');
+      ctx.strokeStyle = beam;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(originX, originY);
+      ctx.lineTo(gx, gy);
+      ctx.stroke();
+
+      // Spectrum out. Each band leaves at its own angle, widest for violet,
+      // which is backwards from real dispersion but reads better left to right.
+      var spread = 0.30 + eased.x * 0.22;
+      for (var i = 0; i < SPECTRUM.length; i++) {
+        var f = i / (SPECTRUM.length - 1);
+        var angle = -spread * 0.5 + spread * f + Math.sin(t + i * 0.4) * 0.012;
+        var len = w * 0.75;
+        var ex = gx + Math.cos(angle) * len;
+        var ey = gy + Math.sin(angle) * len;
+
+        var g = ctx.createLinearGradient(gx, gy, ex, ey);
+        g.addColorStop(0, SPECTRUM[i]);
+        g.addColorStop(0.18, SPECTRUM[i]);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+
+        ctx.strokeStyle = g;
+        ctx.globalAlpha = 0.30;
+        ctx.lineWidth = 8 + Math.sin(t * 1.3 + i) * 1.6;
+        ctx.beginPath();
+        ctx.moveTo(gx, gy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+
+        // A brighter hairline down the centre of each band.
+        ctx.globalAlpha = 0.55;
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+      }
+
+      ctx.globalAlpha = 1;
+      ctx.restore();
+
+      // The glass itself. Drawn last so it sits over the beams.
+      ctx.save();
+      ctx.translate(gx, gy);
+      ctx.rotate(Math.sin(t * 0.5) * 0.06 + (eased.x - 0.5) * 0.22);
+
+      ctx.beginPath();
+      ctx.moveTo(0, -size);
+      ctx.lineTo(size * 0.9, size * 0.62);
+      ctx.lineTo(-size * 0.9, size * 0.62);
+      ctx.closePath();
+
+      var glass = ctx.createLinearGradient(-size, -size, size, size);
+      glass.addColorStop(0, 'rgba(148,163,184,0.10)');
+      glass.addColorStop(0.5, 'rgba(226,232,240,0.05)');
+      glass.addColorStop(1, 'rgba(34,211,238,0.10)');
+      ctx.fillStyle = glass;
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(203,213,225,0.32)';
+      ctx.lineWidth = 1.25;
+      ctx.stroke();
+      ctx.restore();
+
+      raf = win.requestAnimationFrame(draw);
+    }
+
+    resize();
+    win.addEventListener('resize', resize, { passive: true });
+    win.addEventListener('pointermove', onPointer, { passive: true });
+
+    // Stop drawing when the tab is hidden. No reason to burn a phone battery
+    // animating a decoration nobody is looking at.
+    doc.addEventListener('visibilitychange', function () {
+      if (doc.hidden) {
+        win.cancelAnimationFrame(raf);
+        raf = 0;
+      } else if (!raf) {
+        raf = win.requestAnimationFrame(draw);
+      }
+    });
+
+    raf = win.requestAnimationFrame(draw);
+  }
+
+  /* ---------------------------------------------------------------------
+     SCROLL REVEAL
+     Progressive enhancement: the CSS only hides an element once this script
+     has marked it, so with JS off everything is simply visible.
+     ------------------------------------------------------------------ */
+  function startReveals() {
+    var reduce = win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)');
+    if (reduce && reduce.matches) return;
+    if (!('IntersectionObserver' in win)) return;
+
+    var targets = doc.querySelectorAll(
+      '.section__title, .section__lede, .col, .limit, .arch__step, .check, ' +
+      '.callout, .demo__panel, .maker__aside, .finale__lede'
+    );
+    if (!targets.length) return;
+
+    Array.prototype.forEach.call(targets, function (el) {
+      el.setAttribute('data-reveal', '');
+    });
+
+    var io = new win.IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        var el = entry.target;
+        // Stagger siblings so a row of cards arrives as a sequence, not a slab.
+        var siblings = el.parentNode ? el.parentNode.children : [];
+        var index = Array.prototype.indexOf.call(siblings, el);
+        el.style.setProperty('--reveal-delay', Math.min(index, 5) * 70 + 'ms');
+        el.setAttribute('data-shown', 'true');
+        io.unobserve(el);
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+
+    Array.prototype.forEach.call(targets, function (el) { io.observe(el); });
+  }
+
+  /* Header gets a hairline only once the page has actually scrolled. */
+  function startHeaderState() {
+    var header = doc.querySelector('.site-header');
+    if (!header) return;
+    var ticking = false;
+    function update() {
+      header.setAttribute('data-stuck', String(win.scrollY > 8));
+      ticking = false;
+    }
+    win.addEventListener('scroll', function () {
+      if (ticking) return;
+      ticking = true;
+      win.requestAnimationFrame(update);
+    }, { passive: true });
+    update();
+  }
+
     buildThemeControl();
     startMonitor();
     startConnectivityBadge();
     startCopyButtons();
     startFileDemo();
+    // Functional behaviour first, decoration last. The prism cannot take a
+    // working feature down with it if it is the final call. No observed bug
+    // forced this ordering; it is cheap insurance on a purely cosmetic feature.
+    startReveals();
+    startHeaderState();
+    startPrism();
   }
 
   if (doc.readyState === 'loading') {

@@ -20,14 +20,16 @@
   without taking our word for it.
 
   ---------------------------------------------------------------------------
-  DEPLOY CHECKLIST. Three placeholder URLs must be replaced before this goes
-  live. Each is marked inline with a DEPLOY comment.
+  DEPLOY: RESOLVED. All three placeholders are filled and this page is live.
 
-    1. href="/app/"                  every "Open PRISM" link, 4 occurrences
-    2. href="/source/"               the "read the source" links, 2 occurrences
-    3. href="mailto:REPLACE@..."     the contact link in the footer, 1
+    1. the app     -> /PRISM/app/   (deploy.yml builds the app into that path)
+    2. the source  -> the GitHub repository
+    3. contact     -> the repository issue tracker
 
-  Search this file for the token DEPLOY to find all of them.
+  Contact points at issues rather than a personal mailbox on purpose. A public
+  page should not publish somebody's email address without them asking for it,
+  and for a tool like this a public thread is the better channel anyway. Swap
+  it if you would rather take mail directly.
   ---------------------------------------------------------------------------
 
   FACT BASIS. Every factual claim on this page was checked directly against
@@ -111,7 +113,7 @@
            3-state group. Without JS the page still follows prefers-color-scheme. -->
       <div id="theme-slot" class="theme-slot" hidden></div>
       <!-- DEPLOY 1 -->
-      <a class="btn btn--primary btn--sm" href="/app/">Open PRISM</a>
+      <a class="btn btn--primary btn--sm" href="/PRISM/app/">Open PRISM</a>
     </div>
   </div>
 </header>
@@ -122,6 +124,17 @@
   <!-- 1. HERO                                                            -->
   <!-- ================================================================== -->
   <section class="hero" aria-labelledby="hero-title">
+
+    <!--
+      The prism. A white beam enters from the left, strikes the glass, and
+      leaves as a spectrum: the product's own metaphor, running live. It is
+      decorative, so it is aria-hidden and it is the first thing dropped under
+      prefers-reduced-motion. Drawn by hand in app.js on a 2D canvas, because
+      pulling in an animation library would contradict the argument this page
+      is making three paragraphs further down.
+    -->
+    <canvas class="hero__prism" id="prism-canvas" aria-hidden="true"></canvas>
+
     <div class="shell hero__grid">
 
       <div class="hero__copy">
@@ -140,7 +153,7 @@
 
         <div class="cta-row">
           <!-- DEPLOY 1 -->
-          <a class="btn btn--primary" href="/app/">Open PRISM in your browser</a>
+          <a class="btn btn--primary" href="/PRISM/app/">Open PRISM in your browser</a>
           <a class="btn btn--ghost" href="#verify">Check the claim first</a>
         </div>
 
@@ -777,9 +790,9 @@ base-uri     'self';</code></pre>
         </p>
         <div class="cta-row cta-row--center">
           <!-- DEPLOY 1 -->
-          <a class="btn btn--primary btn--lg" href="/app/">Open PRISM in your browser</a>
+          <a class="btn btn--primary btn--lg" href="/PRISM/app/">Open PRISM in your browser</a>
           <!-- DEPLOY 2 -->
-          <a class="btn btn--ghost btn--lg" href="/source/">Read the source</a>
+          <a class="btn btn--ghost btn--lg" href="https://github.com/JesunAhmadUshno/PRISM">Read the source</a>
         </div>
         <p class="finale__note">
           There is no signup form on this page. Not as a growth tactic, and not because we forgot.
@@ -813,9 +826,9 @@ base-uri     'self';</code></pre>
         <li><a href="#how">How it works</a></li>
         <li><a href="#limits">Known limits</a></li>
         <!-- DEPLOY 2 -->
-        <li><a href="/source/">Source</a></li>
+        <li><a href="https://github.com/JesunAhmadUshno/PRISM">Source</a></li>
         <!-- DEPLOY 3 -->
-        <li><a href="mailto:REPLACE@example.invalid">Contact</a></li>
+        <li><a href="https://github.com/JesunAhmadUshno/PRISM/issues">Contact</a></li>
       </ul>
     </nav>
 
