@@ -23,6 +23,8 @@ import type {
   WorkerResultPayload,
 } from '@/types';
 import { validateFile } from '@/security/validator';
+// Inlined at build time so the worker can be started from a blob: URL (see getWorker)
+import prismWorkerSource from '../workers/prism.worker.js?raw';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // INITIAL STATE
@@ -69,28 +71,164 @@ const initialState = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
+// FILE READING
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Upper bound on rows pulled out of a workbook. XLSX.read runs on the main
+ * thread, so an unbounded sheet - a zip bomb still under the 500MB file limit -
+ * would otherwise hang the UI with no recovery path.
+ */
+const MAX_SHEET_ROWS = 100000;
+
+/**
+ * Parser surface is pinned off deliberately: formulas, HTML rendering, number
+ * formats, styles and VBA are all attacker-controlled and none of them are used
+ * by PRISM - only cell values reach sheet_to_csv.
+ */
+const XLSX_READ_OPTIONS: XLSX.ParsingOptions = {
+  type: 'array',
+  sheetRows: MAX_SHEET_ROWS,
+  cellFormula: false,
+  cellHTML: false,
+  cellNF: false,
+  cellStyles: false,
+  bookVBA: false,
+  bookDeps: false,
+};
+
+/**
+ * Parse a workbook and return its first sheet as CSV.
+ *
+ * Security: xlsx@0.18.5 is the deprecated npm SheetJS build affected by
+ * CVE-2023-30533 - prototype pollution reachable through XLSX.read on a crafted
+ * workbook, which is exactly this call, on bytes the user just dragged in and
+ * which XLSX validation never inspects. The npm package is frozen at 0.18.5 and
+ * will never be patched, so the parse is bracketed here: anything it adds to
+ * Object.prototype is stripped again before the result is used, on the error
+ * path as well as the success path.
+ */
+function readWorkbookAsCsv(buffer: ArrayBuffer): string {
+  const prototypeKeysBefore = new Set<PropertyKey>(Reflect.ownKeys(Object.prototype));
+
+  try {
+    const workbook = XLSX.read(buffer, XLSX_READ_OPTIONS);
+
+    // Get first sheet
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      throw new Error('Excel file has no sheets');
+    }
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) {
+      throw new Error('Could not read sheet');
+    }
+
+    // Convert to CSV
+    return XLSX.utils.sheet_to_csv(sheet);
+  } finally {
+    for (const key of Reflect.ownKeys(Object.prototype)) {
+      if (!prototypeKeysBefore.has(key)) {
+        Reflect.deleteProperty(Object.prototype, key);
+      }
+    }
+  }
+}
+
+/**
+ * Read an uploaded file as text, converting Excel workbooks to CSV.
+ *
+ * Single entry point on purpose - the hardening above must not end up applied to
+ * only one of the two upload paths.
+ */
+async function readFileContent(file: File): Promise<string> {
+  const ext = file.name.toLowerCase().split('.').pop();
+  const isExcel = ext === 'xlsx' || ext === 'xls';
+
+  if (isExcel) {
+    // Read Excel and convert to CSV using SheetJS
+    const buffer = await file.arrayBuffer();
+    return readWorkbookAsCsv(buffer);
+  }
+
+  // Read as text for CSV/XML
+  return file.text();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // WORKER MANAGEMENT
 // ═══════════════════════════════════════════════════════════════════════════
 
 let worker: Worker | null = null;
+let workerBlobUrl: string | null = null;
+let workerWarmUpRequested = false;
 
 function getWorker(): Worker {
   if (!worker) {
+    // Security: the worker is the only thread that ever holds the plaintext
+    // user data, so it must run under the document's Content-Security-Policy.
+    // A worker loaded from an https: URL does NOT inherit the document policy -
+    // its policy is built from the worker script's own response headers, and the
+    // GitHub Pages deploy target cannot send any, so the worker would execute
+    // unpoliced with fetch/XHR/WebSocket/importScripts open to every origin.
+    // blob: is a local scheme, so a worker created from one inherits the
+    // creating document's policy container (the CSP in index.html), which
+    // denies every origin except the Pyodide CDN.
+    if (!workerBlobUrl) {
+      workerBlobUrl = URL.createObjectURL(
+        new Blob([prismWorkerSource], { type: 'text/javascript' })
+      );
+    }
     // Use classic worker (not module) for importScripts compatibility
-    worker = new Worker(
-      new URL('../workers/prism.worker.js', import.meta.url),
-      { type: 'classic' }
-    );
+    worker = new Worker(workerBlobUrl, { type: 'classic' });
   }
   return worker;
+}
+
+/**
+ * Create the worker and ask it to start loading Pyodide + pandas/numpy (~25 MB)
+ * before any file is picked, so the download overlaps the user reading the
+ * landing page instead of being serialised behind file validation and reading.
+ *
+ * Safe to call repeatedly: the worker's initializePyodide() is idempotent, and
+ * no message handler is attached here so in-flight progress belongs to whichever
+ * action runs next.
+ */
+export function warmUpWorker(): void {
+  if (typeof Worker === 'undefined' || workerWarmUpRequested) {
+    return;
+  }
+  workerWarmUpRequested = true;
+
+  try {
+    getWorker().postMessage({
+      type: 'INIT',
+      payload: {},
+      timestamp: Date.now(),
+      id: crypto.randomUUID(),
+    });
+  } catch (error) {
+    // Warm-up is best effort - never block app start. getWorker() will create
+    // the worker again on demand, which self-initialises on load.
+    workerWarmUpRequested = false;
+    console.error('Pyodide warm-up failed:', error);
+  }
 }
 
 function terminateWorker(): void {
   if (worker) {
     worker.terminate();
     worker = null;
+    workerWarmUpRequested = false;
+  }
+  if (workerBlobUrl) {
+    URL.revokeObjectURL(workerBlobUrl);
+    workerBlobUrl = null;
   }
 }
+
+// Start the Pyodide/pandas download as soon as the store module is imported.
+warmUpWorker();
 
 // ═══════════════════════════════════════════════════════════════════════════
 // STORE DEFINITION
@@ -149,31 +287,7 @@ export const usePrismStore = create<PrismState>((set, get) => ({
       }
 
       // Read file content - convert Excel to CSV if needed
-      const ext = file.name.toLowerCase().split('.').pop();
-      const isExcel = ext === 'xlsx' || ext === 'xls';
-      
-      let content: string;
-      if (isExcel) {
-        // Read Excel and convert to CSV using SheetJS
-        const buffer = await file.arrayBuffer();
-        const workbook = XLSX.read(buffer, { type: 'array' });
-        
-        // Get first sheet
-        const sheetName = workbook.SheetNames[0];
-        if (!sheetName) {
-          throw new Error('Excel file has no sheets');
-        }
-        const sheet = workbook.Sheets[sheetName];
-        if (!sheet) {
-          throw new Error('Could not read sheet');
-        }
-        
-        // Convert to CSV
-        content = XLSX.utils.sheet_to_csv(sheet);
-      } else {
-        // Read as text for CSV/XML
-        content = await file.text();
-      }
+      const content = await readFileContent(file);
 
       set({
         file: {
@@ -379,25 +493,7 @@ export const usePrismStore = create<PrismState>((set, get) => ({
     }
 
     // Read file content
-    const ext = file.name.toLowerCase().split('.').pop();
-    const isExcel = ext === 'xlsx' || ext === 'xls';
-    
-    let content: string;
-    if (isExcel) {
-      const buffer = await file.arrayBuffer();
-      const workbook = XLSX.read(buffer, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      if (!sheetName) {
-        throw new Error('Excel file has no sheets');
-      }
-      const sheet = workbook.Sheets[sheetName];
-      if (!sheet) {
-        throw new Error('Could not read sheet');
-      }
-      content = XLSX.utils.sheet_to_csv(sheet);
-    } else {
-      content = await file.text();
-    }
+    const content = await readFileContent(file);
 
     // Extract columns from first row
     const firstLine = content.split('\n')[0];

@@ -189,6 +189,15 @@ const ML_MODELS = [
   { id: 'time_series', name: 'Time Series', type: 'forecasting', desc: 'Temporal patterns', useCase: 'Demand forecasting, trend analysis' },
 ];
 
+const TAB_ORDER: AnalyticsTab[] = [
+  'overview',
+  'visualize',
+  'preprocess',
+  'statistics',
+  'analytics',
+  'models',
+];
+
 const PREPROCESSING_OPTIONS = [
   { id: 'remove_nulls', name: 'Remove Null Values', desc: 'Drop rows with missing data' },
   { id: 'fill_mean', name: 'Fill with Mean', desc: 'Replace nulls with column mean' },
@@ -211,10 +220,18 @@ interface TabButtonProps {
   onClick: () => void;
   icon: React.ReactNode;
   label: string;
+  tabId: AnalyticsTab;
 }
 
-const TabButton: React.FC<TabButtonProps> = ({ active, onClick, icon, label }) => (
+const TabButton: React.FC<TabButtonProps> = ({ active, onClick, icon, label, tabId }) => (
   <button
+    type="button"
+    role="tab"
+    id={`analytics-tab-${tabId}`}
+    aria-selected={active}
+    aria-controls={`analytics-panel-${tabId}`}
+    aria-label={label}
+    tabIndex={active ? 0 : -1}
     onClick={onClick}
     className={clsx(
       'flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all duration-200',
@@ -533,11 +550,14 @@ export const AnalyticsWorkspace: React.FC = () => {
         return (
           <div className="overflow-auto h-full">
             <table className="w-full border-collapse text-sm">
+              <caption className="sr-only">
+                Correlation matrix. Each cell holds the correlation coefficient between the variable named in its row header and the variable named in its column header.
+              </caption>
               <thead>
                 <tr>
-                  <th className="p-2 text-left text-slate-500"></th>
+                  <th scope="col" className="p-2 text-left text-slate-500"><span className="sr-only">Variable</span></th>
                   {uniqueVars.map((v) => (
-                    <th key={v} className="p-2 text-center text-slate-600 dark:text-slate-300 font-medium text-xs">
+                    <th key={v} scope="col" title={v} className="p-2 text-center text-slate-600 dark:text-slate-300 font-medium text-xs">
                       {v.slice(0, 8)}
                     </th>
                   ))}
@@ -546,7 +566,7 @@ export const AnalyticsWorkspace: React.FC = () => {
               <tbody>
                 {uniqueVars.map((row) => (
                   <tr key={row}>
-                    <td className="p-2 text-slate-600 dark:text-slate-300 font-medium text-xs">{row.slice(0, 8)}</td>
+                    <th scope="row" title={row} className="p-2 text-left text-slate-600 dark:text-slate-300 font-medium text-xs">{row.slice(0, 8)}</th>
                     {uniqueVars.map((col) => {
                       const cell = data.find((d: any) => d.x === row && d.y === col);
                       const value = cell?.value ?? 0;
@@ -665,41 +685,90 @@ export const AnalyticsWorkspace: React.FC = () => {
     }
   };
 
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const currentIndex = TAB_ORDER.indexOf(activeTab);
+    let nextIndex = currentIndex;
+
+    switch (event.key) {
+      case 'ArrowRight':
+        nextIndex = (currentIndex + 1) % TAB_ORDER.length;
+        break;
+      case 'ArrowLeft':
+        nextIndex = (currentIndex - 1 + TAB_ORDER.length) % TAB_ORDER.length;
+        break;
+      case 'Home':
+        nextIndex = 0;
+        break;
+      case 'End':
+        nextIndex = TAB_ORDER.length - 1;
+        break;
+      default:
+        return;
+    }
+
+    const nextTab = TAB_ORDER[nextIndex];
+    if (!nextTab) return;
+
+    event.preventDefault();
+    setActiveTab(nextTab);
+    document.getElementById(`analytics-tab-${nextTab}`)?.focus();
+  };
+
   return (
     <div className="space-y-6">
       {/* Tab Navigation */}
-      <div className="flex flex-wrap gap-2 p-2 glass-card">
+      {/*
+        The roving-focus key handler lives on the tablist container: keydown
+        bubbles up from whichever tab currently holds focus (ARIA APG pattern).
+        Because the container itself carries a keyboard handler it must also be
+        focusable -- tabIndex={-1} makes it programmatically focusable without
+        introducing a second tab stop, keeping the tablist a single tab stop.
+      */}
+      <div
+        role="tablist"
+        aria-label="Analytics sections"
+        aria-orientation="horizontal"
+        tabIndex={-1}
+        onKeyDown={handleTabKeyDown}
+        className="flex flex-wrap gap-2 p-2 glass-card"
+      >
         <TabButton 
+          tabId="overview"
           active={activeTab === 'overview'} 
           onClick={() => setActiveTab('overview')}
           icon={<TableIcon />}
           label="Data Overview"
         />
         <TabButton 
+          tabId="visualize"
           active={activeTab === 'visualize'} 
           onClick={() => setActiveTab('visualize')}
           icon={<ChartBarIcon />}
           label="Visualize"
         />
         <TabButton 
+          tabId="preprocess"
           active={activeTab === 'preprocess'} 
           onClick={() => setActiveTab('preprocess')}
           icon={<BeakerIcon />}
           label="Preprocess"
         />
         <TabButton 
+          tabId="statistics"
           active={activeTab === 'statistics'} 
           onClick={() => setActiveTab('statistics')}
           icon={<CalculatorIcon />}
           label="Statistics"
         />
         <TabButton 
+          tabId="analytics"
           active={activeTab === 'analytics'} 
           onClick={() => setActiveTab('analytics')}
           icon={<LightBulbIcon />}
           label="Analytics"
         />
         <TabButton 
+          tabId="models"
           active={activeTab === 'models'} 
           onClick={() => setActiveTab('models')}
           icon={<CubeIcon />}
@@ -713,7 +782,13 @@ export const AnalyticsWorkspace: React.FC = () => {
             DATA OVERVIEW TAB
             ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === 'overview' && (
-          <div className="space-y-6">
+          <div
+            role="tabpanel"
+            id="analytics-panel-overview"
+            aria-labelledby="analytics-tab-overview"
+            tabIndex={0}
+            className="space-y-6"
+          >
             {/* Summary Stats */}
             <div className="glass-card p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -745,20 +820,23 @@ export const AnalyticsWorkspace: React.FC = () => {
               <h3 className="text-lg font-semibold mb-4">Column Details</h3>
               <div className="overflow-x-auto">
                 <table className="w-full">
+                  <caption className="sr-only">
+                    Column details: data type, unique value count, missing value count, mean and standard deviation for every column in the dataset.
+                  </caption>
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-700">
-                      <th className="text-left p-3 font-medium">Column</th>
-                      <th className="text-left p-3 font-medium">Type</th>
-                      <th className="text-right p-3 font-medium">Unique</th>
-                      <th className="text-right p-3 font-medium">Missing</th>
-                      <th className="text-right p-3 font-medium">Mean</th>
-                      <th className="text-right p-3 font-medium">Std Dev</th>
+                      <th scope="col" className="text-left p-3 font-medium">Column</th>
+                      <th scope="col" className="text-left p-3 font-medium">Type</th>
+                      <th scope="col" className="text-right p-3 font-medium">Unique</th>
+                      <th scope="col" className="text-right p-3 font-medium">Missing</th>
+                      <th scope="col" className="text-right p-3 font-medium">Mean</th>
+                      <th scope="col" className="text-right p-3 font-medium">Std Dev</th>
                     </tr>
                   </thead>
                   <tbody>
                     {results.summary?.statistics?.map((stat) => (
                       <tr key={stat.columnName} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                        <td className="p-3 font-medium">{stat.columnName}</td>
+                        <th scope="row" className="text-left p-3 font-medium">{stat.columnName}</th>
                         <td className="p-3">
                           <span className={clsx(
                             'badge-primary',
@@ -821,7 +899,13 @@ export const AnalyticsWorkspace: React.FC = () => {
             VISUALIZE TAB
             ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === 'visualize' && (
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div
+            role="tabpanel"
+            id="analytics-panel-visualize"
+            aria-labelledby="analytics-tab-visualize"
+            tabIndex={0}
+            className="grid lg:grid-cols-3 gap-6"
+          >
             {/* Column Selection */}
             <div className="glass-card p-6">
               <h3 className="text-lg font-semibold mb-4">Select Columns</h3>
@@ -941,7 +1025,7 @@ export const AnalyticsWorkspace: React.FC = () => {
 
                 {/* Visualization Running State */}
                 {isRunning && activeTab === 'visualize' && (
-                  <div className="mt-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                  <div role="status" aria-live="polite" className="mt-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
                     <div className="flex items-center gap-3">
                       <div className="w-5 h-5 border-2 border-prism-500 border-t-transparent rounded-full animate-spin" />
                       <span className="text-sm">Creating visualization...</span>
@@ -951,7 +1035,7 @@ export const AnalyticsWorkspace: React.FC = () => {
 
                 {/* Visualization Results */}
                 {visualizationResults && !isRunning && (
-                  <div className="mt-4">
+                  <div role="status" aria-live="polite" aria-atomic="true" className="mt-4">
                     {visualizationResults.success === false ? (
                       <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
                         <p className="text-red-700 dark:text-red-400 font-medium">Visualization Failed</p>
@@ -983,7 +1067,13 @@ export const AnalyticsWorkspace: React.FC = () => {
             PREPROCESS TAB
             ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === 'preprocess' && (
-          <div className="grid lg:grid-cols-2 gap-6">
+          <div
+            role="tabpanel"
+            id="analytics-panel-preprocess"
+            aria-labelledby="analytics-tab-preprocess"
+            tabIndex={0}
+            className="grid lg:grid-cols-2 gap-6"
+          >
             {/* Preprocessing Options */}
             <div className="glass-card p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -1083,7 +1173,7 @@ export const AnalyticsWorkspace: React.FC = () => {
 
               {/* Preprocessing Results */}
               {isRunning && activeTab === 'preprocess' && (
-                <div className="glass-card p-6">
+                <div role="status" aria-live="polite" className="glass-card p-6">
                   <div className="flex items-center gap-4">
                     <div className="relative">
                       <div className="w-12 h-12 rounded-full border-4 border-slate-200 dark:border-slate-700" />
@@ -1098,7 +1188,7 @@ export const AnalyticsWorkspace: React.FC = () => {
               )}
 
               {preprocessingResults && !isRunning && (
-                <div className="glass-card p-6">
+                <div role="status" aria-live="polite" aria-atomic="true" className="glass-card p-6">
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <CheckIcon />
                     Preprocessing Results
@@ -1126,7 +1216,13 @@ export const AnalyticsWorkspace: React.FC = () => {
             STATISTICS TAB
             ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === 'statistics' && (
-          <div className="space-y-6">
+          <div
+            role="tabpanel"
+            id="analytics-panel-statistics"
+            aria-labelledby="analytics-tab-statistics"
+            tabIndex={0}
+            className="space-y-6"
+          >
             {/* Column Selection */}
             <div className="glass-card p-6">
               <h3 className="text-lg font-semibold mb-4">1. Select Variables</h3>
@@ -1281,7 +1377,7 @@ export const AnalyticsWorkspace: React.FC = () => {
 
             {/* Running State */}
             {isRunning && (
-              <div className="glass-card p-6">
+              <div role="status" aria-live="polite" className="glass-card p-6">
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <div className="w-12 h-12 rounded-full border-4 border-slate-200 dark:border-slate-700" />
@@ -1297,7 +1393,7 @@ export const AnalyticsWorkspace: React.FC = () => {
 
             {/* Test Results */}
             {testResults && !isRunning && (
-              <div className="glass-card p-6">
+              <div role="status" aria-live="polite" aria-atomic="true" className="glass-card p-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <CheckIcon />
                   Test Results
@@ -1360,7 +1456,13 @@ export const AnalyticsWorkspace: React.FC = () => {
             ANALYTICS TAB
             ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === 'analytics' && (
-          <div className="space-y-6">
+          <div
+            role="tabpanel"
+            id="analytics-panel-analytics"
+            aria-labelledby="analytics-tab-analytics"
+            tabIndex={0}
+            className="space-y-6"
+          >
             {/* Analytics Types */}
             <div className="grid md:grid-cols-2 gap-6">
               {ANALYTICS_METHODS.map((method) => (
@@ -1464,7 +1566,13 @@ export const AnalyticsWorkspace: React.FC = () => {
             ML MODELS TAB
             ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === 'models' && (
-          <div className="space-y-6">
+          <div
+            role="tabpanel"
+            id="analytics-panel-models"
+            aria-labelledby="analytics-tab-models"
+            tabIndex={0}
+            className="space-y-6"
+          >
             {/* Model Selection */}
             <div className="glass-card p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">

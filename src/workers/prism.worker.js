@@ -13,7 +13,30 @@
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════
 
-const PYODIDE_CDN = 'https://cdn.jsdelivr.net/pyodide/v0.25.1/full/';
+const PYODIDE_VERSION = '0.25.1';
+
+// Base URL of the Pyodide distribution. Repoint this at a same-origin path
+// (e.g. '/PRISM/pyodide/') once the distribution is vendored into the build:
+// the digests below do not change, because the files jsDelivr serves are
+// byte-for-byte identical to the ones in the `pyodide` npm package.
+const PYODIDE_BASE = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
+
+// Pinned SHA-384 digests for every Pyodide artifact this worker executes or
+// trusts. Without them, `importScripts()` would run whatever the CDN happened
+// to return - importScripts cannot carry a subresource-integrity attribute -
+// inside a worker that already holds the user's spreadsheet in memory.
+//
+// Verified against both cdn.jsdelivr.net and the pyodide@0.25.1 npm tarball.
+// The package wheels (pandas/numpy/scipy) are deliberately absent: Pyodide
+// fetches each one with `fetch(url, { integrity: 'sha256-...' })` taken from
+// pyodide-lock.json, so pinning the lock file transitively pins every wheel.
+const PYODIDE_INTEGRITY = {
+  'pyodide.js': 'sha384-seajjUQIcvEwMC5MMXEiumXqlQqO0Bx2snuTKoW5x3LQ5o2nPJDK7cQsB4M0a7fw',
+  'pyodide.asm.js': 'sha384-Lj8+PDRpggK+1+MOR0nQQl7nNK8R2+6Yt8N0O+7Qm6VCt/lee9WTQ9/O4c9paGDh',
+  'pyodide.asm.wasm': 'sha384-jazqcjXUeIYMNgPrqcZmv0cjFnPj/e0eC+x9e0NleEYkCOxveIMMtXU3uD7uRlMM',
+  'python_stdlib.zip': 'sha384-wYtooCsLebeus5pNVdWFoXc6/A5PscOZFE2zDOnACDvdI9O77C080Eqnat8WO/x0',
+  'pyodide-lock.json': 'sha384-kOoqicMyQ/49EzrjGMHO3+jCUhN+tOrhfgLDZvjyjba5f3dIgpogE7TRbL1yeE20'
+};
 
 // The Python analytics script (embedded for security - no external fetch)
 const PRISM_CORE_PYTHON = `
@@ -23,6 +46,7 @@ PRISM Core Analytics Engine (Embedded)
 
 import json
 import io
+import math
 from typing import Any, Optional
 from dataclasses import dataclass, asdict
 from enum import Enum
@@ -49,34 +73,102 @@ class ChartType(Enum):
     HISTOGRAM = "histogram"
 
 
+# NaN and Infinity are valid Python floats but are NOT valid JSON. json.dumps
+# never consults default= for them - it emits the bare tokens NaN/Infinity,
+# which JSON.parse() on the JavaScript side rejects. Every payload that
+# crosses the bridge is scrubbed through these helpers first.
+def _finite_or_none(value):
+    """Return value as a float, or None when it is NaN/Infinity/unparseable."""
+    try:
+        num = float(value)
+    except (TypeError, ValueError):
+        return None
+    return num if math.isfinite(num) else None
+
+
+def _json_safe(obj):
+    """Recursively map numpy scalars and non-finite floats to JSON-safe values."""
+    if obj is None:
+        return None
+    if isinstance(obj, (np.bool_, np.integer, np.floating)):
+        obj = obj.item()
+    if isinstance(obj, float):
+        return obj if math.isfinite(obj) else None
+    if isinstance(obj, (str, bool, int)):
+        return obj
+    if isinstance(obj, np.ndarray):
+        return [_json_safe(v) for v in obj.tolist()]
+    if isinstance(obj, dict):
+        return {str(k): _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple, set)):
+        return [_json_safe(v) for v in obj]
+    try:
+        if pd.isna(obj):
+            return None
+    except (TypeError, ValueError):
+        pass
+    return obj
+
+
+# Most recently parsed CSV, kept so repeated workspace actions on the same
+# dataset reuse the DataFrame instead of re-parsing the whole file every time.
+_cached_csv = None
+_cached_df = None
+
+
+def parse_csv(csv_string):
+    """
+    Parse a CSV string into a DataFrame, reusing the last parse when the
+    content is unchanged. Pass None to reuse the cached DataFrame outright.
+
+    Raises ValueError if there is nothing to parse and nothing cached.
+    """
+    global _cached_csv, _cached_df
+
+    if csv_string is None:
+        if _cached_df is None:
+            raise ValueError("No data loaded")
+        return _cached_df
+
+    # Clean the input
+    csv_string = csv_string.strip()
+    if not csv_string:
+        raise ValueError("No data could be parsed from file")
+
+    if _cached_df is not None and csv_string == _cached_csv:
+        return _cached_df
+
+    # Try the default (C) parser first - it is an order of magnitude faster
+    try:
+        df = pd.read_csv(
+            io.StringIO(csv_string),
+            on_bad_lines='skip',
+            encoding_errors='replace'
+        )
+    except Exception:
+        # Fallback: sniff the separator (only the python engine can do this)
+        df = pd.read_csv(
+            io.StringIO(csv_string),
+            sep=None,
+            engine='python',
+            on_bad_lines='skip'
+        )
+
+    _cached_csv = csv_string
+    _cached_df = df
+    return df
+
+
 class PrismAnalytics:
     def __init__(self):
         self.df = None
         self.column_types = {}
-        
+
     def load_csv(self, csv_string, file_type='csv'):
         """Load data - Excel files are pre-converted to CSV in JavaScript"""
         try:
-            # Clean the input
-            csv_string = csv_string.strip()
-            
-            # Try standard parsing first
-            try:
-                self.df = pd.read_csv(
-                    io.StringIO(csv_string),
-                    on_bad_lines='skip',
-                    encoding_errors='replace',
-                    engine='python'
-                )
-            except Exception:
-                # Fallback: try with different settings
-                self.df = pd.read_csv(
-                    io.StringIO(csv_string),
-                    sep=None,
-                    engine='python',
-                    on_bad_lines='skip'
-                )
-            
+            self.df = parse_csv(csv_string)
+
             if self.df is None or len(self.df) == 0:
                 return {"success": False, "error": "No data could be parsed from file"}
             
@@ -162,13 +254,13 @@ class PrismAnalytics:
             if col_type == DataType.NUMERIC:
                 ns = pd.to_numeric(series, errors='coerce')
                 base.update({
-                    "mean": float(ns.mean()) if pd.notna(ns.mean()) else None,
-                    "median": float(ns.median()) if pd.notna(ns.median()) else None,
-                    "stdDev": float(ns.std()) if pd.notna(ns.std()) else None,
-                    "min": float(ns.min()) if pd.notna(ns.min()) else None,
-                    "max": float(ns.max()) if pd.notna(ns.max()) else None,
-                    "q1": float(ns.quantile(0.25)) if pd.notna(ns.quantile(0.25)) else None,
-                    "q3": float(ns.quantile(0.75)) if pd.notna(ns.quantile(0.75)) else None
+                    "mean": _finite_or_none(ns.mean()),
+                    "median": _finite_or_none(ns.median()),
+                    "stdDev": _finite_or_none(ns.std()),
+                    "min": _finite_or_none(ns.min()),
+                    "max": _finite_or_none(ns.max()),
+                    "q1": _finite_or_none(ns.quantile(0.25)),
+                    "q3": _finite_or_none(ns.quantile(0.75))
                 })
             elif col_type == DataType.CATEGORICAL:
                 vc = series.value_counts().head(10)
@@ -273,10 +365,10 @@ class PrismAnalytics:
                 else:
                     grouped = self.df[x_col].value_counts().reset_index()
                     grouped.columns = [x_col, 'count']
-                return grouped.head(limit).to_dict('records')
+                return _json_safe(grouped.head(limit).to_dict('records'))
             else:
                 cols = [x_col] + ([y_col] if y_col and y_col in self.df.columns else [])
-                return self.df[cols].head(limit).to_dict('records')
+                return _json_safe(self.df[cols].head(limit).to_dict('records'))
         except:
             return []
     
@@ -313,7 +405,7 @@ class PrismAnalytics:
                 except Exception:
                     continue
             
-            return json.dumps({
+            return json.dumps(_json_safe({
                 "success": True,
                 "summary": {
                     "rowCount": len(self.df) if self.df is not None else 0,
@@ -325,7 +417,7 @@ class PrismAnalytics:
                 "recommendations": recommendations,
                 "insights": insights,
                 "chartData": chart_data
-            }, default=str)
+            }), default=str, allow_nan=False)
         except Exception as e:
             return json.dumps({"success": False, "error": f"Analysis error: {str(e)}"})
 
@@ -349,7 +441,7 @@ def merge_datasets(datasets, links):
         # Load all datasets into DataFrames
         dfs = {}
         for ds in datasets:
-            df = pd.read_csv(io.StringIO(ds['content']), on_bad_lines='skip', engine='python')
+            df = parse_csv(ds['content'])
             dfs[ds['id']] = {'df': df, 'name': ds['name']}
         
         if len(dfs) == 0:
@@ -432,16 +524,16 @@ def run_statistical_test(data, test_id, columns, parameters=None):
     scipy_stats is imported lazily before this function is called.
     
     Args:
-        data: CSV string
+        data: CSV string (None to reuse the already parsed DataFrame)
         test_id: ID of the test to run
         columns: List of column names to use
         parameters: Optional dict of additional parameters
-    
+
     Returns:
         JSON string with test results
     """
     try:
-        df = pd.read_csv(io.StringIO(data), on_bad_lines='skip', engine='python')
+        df = parse_csv(data)
         
         result = {
             "success": True,
@@ -525,12 +617,21 @@ def run_statistical_test(data, test_id, columns, parameters=None):
                 return json.dumps({"success": False, "error": "Paired t-test requires 2 numeric columns"})
             col1 = get_numeric(columns[0])
             col2 = get_numeric(columns[1])
-            min_len = min(len(col1), len(col2))
-            stat, p = scipy_stats.ttest_rel(col1[:min_len], col2[:min_len])
+            # get_numeric drops nulls from each column independently, so the two
+            # Series no longer share an index. Pair on the shared index rather
+            # than by position - otherwise a single missing value silently
+            # shifts every subsequent pair by one row.
+            valid_idx = col1.index.intersection(col2.index)
+            if len(valid_idx) < 2:
+                return json.dumps({"success": False, "error": "Paired t-test requires at least 2 complete pairs"})
+            dropped = int(len(col1.index.union(col2.index)) - len(valid_idx))
+            stat, p = scipy_stats.ttest_rel(col1.loc[valid_idx], col2.loc[valid_idx])
             result['statistic'] = to_python(stat)
             result['pValue'] = to_python(p)
+            result['degreesOfFreedom'] = int(len(valid_idx) - 1)
             result['significant'] = bool(p < alpha)
-            result['interpretation'] = f"The paired difference between '{columns[0]}' and '{columns[1]}' is {'statistically significant' if p < alpha else 'not statistically significant'} (t={stat:.3f}, p={p:.4f})."
+            result['interpretation'] = f"The paired difference between '{columns[0]}' and '{columns[1]}' is {'statistically significant' if p < alpha else 'not statistically significant'} (t={stat:.3f}, p={p:.4f}), based on {len(valid_idx)} complete pairs." + \
+                (f" {dropped} incomplete pair(s) were excluded." if dropped > 0 else "")
         
         # ANOVA
         elif test_id == 'one_way_anova':
@@ -752,7 +853,7 @@ def run_statistical_test(data, test_id, columns, parameters=None):
         else:
             return json.dumps({"success": False, "error": f"Unknown test: {test_id}"})
         
-        return json.dumps(result)
+        return json.dumps(_json_safe(result), allow_nan=False)
         
     except Exception as e:
         return json.dumps({"success": False, "error": f"Statistical test error: {str(e)}"})
@@ -763,15 +864,16 @@ def run_preprocessing(data, operations, columns=None):
     Apply preprocessing operations to data.
     
     Args:
-        data: CSV string
+        data: CSV string (None to reuse the already parsed DataFrame)
         operations: List of operation IDs
         columns: Optional list of columns to apply to (None = all applicable)
-    
+
     Returns:
         JSON string with preprocessed data
     """
     try:
-        df = pd.read_csv(io.StringIO(data), on_bad_lines='skip', engine='python')
+        # Copy: preprocessing mutates columns in place and must not touch the cache
+        df = parse_csv(data).copy()
         original_shape = df.shape
         
         # Determine which columns to process
@@ -855,15 +957,15 @@ def run_visualization(data, chart_type, columns):
     Generate visualization data based on chart type and columns.
     
     Args:
-        data: CSV string
+        data: CSV string (None to reuse the already parsed DataFrame)
         chart_type: Type of chart (bar, line, scatter, pie, histogram, etc.)
         columns: List of column names to use
-    
+
     Returns:
         JSON string with chart configuration
     """
     try:
-        df = pd.read_csv(io.StringIO(data), on_bad_lines='skip', engine='python')
+        df = parse_csv(data)
         
         if len(columns) == 0:
             return json.dumps({"success": False, "error": "Please select at least one column"})
@@ -878,12 +980,9 @@ def run_visualization(data, chart_type, columns):
         }
         
         # Helper to convert values to JSON-serializable format
+        # (_json_safe also maps NaN/Infinity to None - they are not valid JSON)
         def to_serializable(val):
-            if pd.isna(val):
-                return None
-            if isinstance(val, (np.bool_, np.integer, np.floating)):
-                return val.item()
-            return val
+            return _json_safe(val)
         
         if chart_type == 'histogram':
             # Histogram: distribution of a single numeric column
@@ -1021,7 +1120,7 @@ def run_visualization(data, chart_type, columns):
         else:
             return json.dumps({"success": False, "error": f"Unsupported chart type: {chart_type}"})
         
-        return json.dumps(result)
+        return json.dumps(_json_safe(result), allow_nan=False)
         
     except Exception as e:
         return json.dumps({"success": False, "error": f"Visualization error: {str(e)}"})
@@ -1033,22 +1132,25 @@ def run_custom_analysis(config, data_content):
     """
     try:
         analysis_type = config.get('type')
-        
+
+        # Blank content means "reuse the DataFrame this worker already parsed"
+        data = data_content if data_content else None
+
         if analysis_type == 'statistical_test':
             test_id = config.get('testId')
             columns = config.get('columns', [])
             parameters = config.get('parameters', {})
-            return run_statistical_test(data_content, test_id, columns, parameters)
-        
+            return run_statistical_test(data, test_id, columns, parameters)
+
         elif analysis_type == 'preprocessing':
             operations = config.get('operations', [])
             columns = config.get('columns')
-            return run_preprocessing(data_content, operations, columns)
-        
+            return run_preprocessing(data, operations, columns)
+
         elif analysis_type == 'visualization':
             chart_type = config.get('chartType', 'bar')
             columns = config.get('columns', [])
-            return run_visualization(data_content, chart_type, columns)
+            return run_visualization(data, chart_type, columns)
         
         else:
             return json.dumps({"success": False, "error": f"Unknown analysis type: {analysis_type}"})
@@ -1109,6 +1211,102 @@ function sendError(error, code = 'UNKNOWN_ERROR') {
 }
 
 /**
+ * Parse JSON produced by the Python layer.
+ *
+ * NaN and Infinity are not valid JSON; if any ever escapes the scrubbing in
+ * PRISM_CORE_PYTHON, JSON.parse throws a SyntaxError that reads like a generic
+ * failure. Name the real cause instead of surfacing "Unexpected token 'N'".
+ */
+function parseAnalysisJson(resultJson, context) {
+  try {
+    return JSON.parse(resultJson);
+  } catch (error) {
+    const nonFinite = /(?:^|[\s,:[{])-?(?:NaN|Infinity)(?=[\s,\]}]|$)/.test(String(resultJson));
+    const detail = nonFinite
+      ? 'it contained NaN or Infinity, which are not valid JSON (usually a column with missing or overflowing values)'
+      : error instanceof Error ? error.message : 'malformed JSON';
+    throw new Error(`${context} returned unreadable output: ${detail}`);
+  }
+}
+
+/**
+ * Fetch one Pyodide artifact with its pinned SHA-384 enforced by the browser.
+ * A digest mismatch fails the fetch, so nothing unverified is ever executed.
+ */
+async function fetchVerified(fileName) {
+  const integrity = PYODIDE_INTEGRITY[fileName];
+  if (!integrity) {
+    throw new Error(`No pinned digest for ${fileName}; refusing to load it.`);
+  }
+
+  let response;
+  try {
+    response = await fetch(`${PYODIDE_BASE}${fileName}`, { integrity, credentials: 'omit' });
+  } catch {
+    throw new Error(
+      `${fileName} could not be downloaded, or its contents did not match the pinned ` +
+      `SHA-384 digest. It was NOT executed.`
+    );
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to download ${fileName} (HTTP ${response.status}).`);
+  }
+  return response.text();
+}
+
+/**
+ * Execute already-verified source in the worker's global scope.
+ * A blob URL keeps importScripts semantics (no eval, no strict-mode scoping
+ * surprises) while the bytes themselves come from an integrity-checked fetch.
+ */
+function runVerifiedScript(source) {
+  const blobUrl = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
+  try {
+    importScripts(blobUrl);
+  } finally {
+    URL.revokeObjectURL(blobUrl);
+  }
+}
+
+/**
+ * Guard everything Pyodide itself fetches from PYODIDE_BASE.
+ *
+ * Runtime assets (wasm, stdlib, lock file) get their pinned digest attached;
+ * package wheels already carry their own lock-file digest and pass through
+ * untouched. Anything else under that base is refused rather than trusted.
+ */
+function installPyodideFetchGuard() {
+  if (self.__prismFetchGuardInstalled) {
+    return;
+  }
+  const nativeFetch = self.fetch.bind(self);
+
+  self.fetch = function guardedFetch(input, init) {
+    const url = typeof input === 'string'
+      ? input
+      : input instanceof URL ? input.href : (input && input.url) || '';
+
+    if (!url.startsWith(PYODIDE_BASE)) {
+      return nativeFetch(input, init);
+    }
+
+    const fileName = url.slice(PYODIDE_BASE.length).split('?')[0];
+    const pinned = PYODIDE_INTEGRITY[fileName];
+    if (pinned) {
+      return nativeFetch(input, { ...init, integrity: pinned });
+    }
+    if (init && init.integrity) {
+      return nativeFetch(input, init);
+    }
+    return Promise.reject(new Error(
+      `Refusing to load ${fileName} from ${PYODIDE_BASE}: no integrity digest.`
+    ));
+  };
+
+  self.__prismFetchGuardInstalled = true;
+}
+
+/**
  * Initialize Pyodide runtime
  */
 async function initializePyodide() {
@@ -1119,23 +1317,32 @@ async function initializePyodide() {
   sendProgress({
     status: 'validating',
     progress: 10,
-    message: 'Loading Python runtime...',
-    accessibleMessage: 'Loading Python runtime. Please wait.'
+    message: 'Downloading Python runtime...',
+    accessibleMessage: `Downloading the Python runtime from ${PYODIDE_BASE}. No file data is uploaded.`
   });
 
   try {
-    // Import Pyodide from CDN - this works in classic workers
-    importScripts(`${PYODIDE_CDN}pyodide.js`);
+    // Every fetch Pyodide makes from PYODIDE_BASE is integrity-checked.
+    installPyodideFetchGuard();
+
+    // Fetch the loader ourselves so the browser can enforce a pinned SHA-384
+    // before a single byte runs - importScripts() cannot carry one.
+    runVerifiedScript(await fetchVerified('pyodide.js'));
+
+    // Pre-load the (verified) runtime module so loadPyodide() finds
+    // globalThis._createPyodideModule already defined and never reaches for
+    // pyodide.asm.js over an unverified importScripts().
+    runVerifiedScript(await fetchVerified('pyodide.asm.js'));
     
     sendProgress({
       status: 'parsing',
       progress: 30,
-      message: 'Initializing WebAssembly...',
-      accessibleMessage: 'Initializing WebAssembly sandbox.'
+      message: 'Starting verified WebAssembly runtime...',
+      accessibleMessage: 'Starting the verified WebAssembly runtime.'
     });
 
-    // Load Pyodide
-    pyodide = await loadPyodide();
+    // Explicit indexURL: never let the loader infer where to fetch from.
+    pyodide = await loadPyodide({ indexURL: PYODIDE_BASE });
 
     sendProgress({
       status: 'parsing',
@@ -1205,7 +1412,7 @@ async function processFile(payload) {
 
     // Run analysis
     const resultJson = await pyodide.runPythonAsync('analyze_csv(file_data, file_type)');
-    const result = JSON.parse(resultJson);
+    const result = parseAnalysisJson(resultJson, 'Analysis');
 
     if (!result.success) {
       throw new Error(result.error || 'Analysis failed');
@@ -1276,7 +1483,7 @@ links = json.loads(links_data)
 merge_datasets(datasets, links)
 `);
     
-    const mergeResult = JSON.parse(mergeResultJson);
+    const mergeResult = parseAnalysisJson(mergeResultJson, 'Dataset merge');
 
     if (!mergeResult.success) {
       throw new Error(mergeResult.error || 'Failed to merge datasets');
@@ -1294,7 +1501,7 @@ merge_datasets(datasets, links)
     pyodide.globals.set('file_type', 'csv');
 
     const resultJson = await pyodide.runPythonAsync('analyze_csv(file_data, file_type)');
-    const result = JSON.parse(resultJson);
+    const result = parseAnalysisJson(resultJson, 'Analysis');
 
     if (!result.success) {
       throw new Error(result.error || 'Analysis failed');
@@ -1364,9 +1571,11 @@ async function processCustomAnalysis(payload) {
   });
 
   try {
-    // Convert config to Python-compatible format
+    // Convert config to Python-compatible format.
+    // dataContent is optional: an empty string tells Python to reuse the
+    // DataFrame it already parsed instead of re-parsing the whole CSV.
     pyodide.globals.set('analysis_config', JSON.stringify(config));
-    pyodide.globals.set('analysis_data', dataContent);
+    pyodide.globals.set('analysis_data', dataContent || '');
 
     sendProgress({
       status: 'analyzing',
@@ -1382,7 +1591,7 @@ config = json.loads(analysis_config)
 run_custom_analysis(config, analysis_data)
 `);
     
-    const result = JSON.parse(resultJson);
+    const result = parseAnalysisJson(resultJson, 'Custom analysis');
 
     sendProgress({
       status: 'complete',
