@@ -8,7 +8,7 @@
  */
 
 import { create } from 'zustand';
-import * as XLSX from 'xlsx';
+import { loadSheetJS } from '@/lib/sheetjs-loader';
 import type {
   PrismState,
   FileMetadata,
@@ -51,6 +51,10 @@ const initialState = {
     content: null as string | null,
     validationStatus: 'pending' as const,
     validationError: null as string | null,
+    // Things the user must be told about how their file was read, for example
+    // that a workbook had several sheets and only the first was analysed.
+    // These are not errors: the analysis succeeded, but on less than the whole file.
+    notices: [] as string[],
   },
   // Multi-dataset state
   datasets: [] as import('@/types').Dataset[],
@@ -86,7 +90,7 @@ const MAX_SHEET_ROWS = 100000;
  * formats, styles and VBA are all attacker-controlled and none of them are used
  * by PRISM - only cell values reach sheet_to_csv.
  */
-const XLSX_READ_OPTIONS: XLSX.ParsingOptions = {
+const XLSX_READ_OPTIONS: Record<string, unknown> = {
   type: 'array',
   sheetRows: MAX_SHEET_ROWS,
   cellFormula: false,
@@ -97,24 +101,32 @@ const XLSX_READ_OPTIONS: XLSX.ParsingOptions = {
   bookDeps: false,
 };
 
+/** What a workbook parse produced, plus anything the user must be told about it. */
+interface ParseResult {
+  content: string;
+  notices: string[];
+}
+
 /**
  * Parse a workbook and return its first sheet as CSV.
  *
- * Security: xlsx@0.18.5 is the deprecated npm SheetJS build affected by
- * CVE-2023-30533 - prototype pollution reachable through XLSX.read on a crafted
- * workbook, which is exactly this call, on bytes the user just dragged in and
- * which XLSX validation never inspects. The npm package is frozen at 0.18.5 and
- * will never be patched, so the parse is bracketed here: anything it adds to
- * Object.prototype is stripped again before the result is used, on the error
- * path as well as the success path.
+ * Security: this now runs SheetJS 0.20.3, vendored in public/vendor/ and loaded
+ * on demand by src/lib/sheetjs-loader.ts. The previous npm build, xlsx@0.18.5,
+ * was frozen and unpatchable, carrying prototype pollution (GHSA-4r6h-8v6p-xvw6)
+ * reachable through exactly this call on bytes the user just dragged in.
+ *
+ * The Object.prototype bracket below is kept even though 0.20.3 fixes that
+ * advisory. It costs a set construction per upload, it is the only thing
+ * standing between a future parser regression and the rest of the application,
+ * and this parser's whole job is chewing on hostile input.
  */
-function readWorkbookAsCsv(buffer: ArrayBuffer): string {
+async function readWorkbookAsCsv(buffer: ArrayBuffer): Promise<ParseResult> {
+  const XLSX = await loadSheetJS();
   const prototypeKeysBefore = new Set<PropertyKey>(Reflect.ownKeys(Object.prototype));
 
   try {
     const workbook = XLSX.read(buffer, XLSX_READ_OPTIONS);
 
-    // Get first sheet
     const sheetName = workbook.SheetNames[0];
     if (!sheetName) {
       throw new Error('Excel file has no sheets');
@@ -124,8 +136,21 @@ function readWorkbookAsCsv(buffer: ArrayBuffer): string {
       throw new Error('Could not read sheet');
     }
 
-    // Convert to CSV
-    return XLSX.utils.sheet_to_csv(sheet);
+    // Only the first worksheet is analysed. Saying nothing about the others was
+    // the most likely source of a silently wrong answer in the product: a user
+    // whose data sits on sheet 2 got a confident analysis of sheet 1.
+    const notices: string[] = [];
+    if (workbook.SheetNames.length > 1) {
+      const skipped = workbook.SheetNames.slice(1);
+      notices.push(
+        `This workbook has ${workbook.SheetNames.length} worksheets. ` +
+          `Only "${sheetName}" was analysed. ` +
+          `Not analysed: ${skipped.map((s) => `"${s}"`).join(', ')}. ` +
+          `To analyse another sheet, save it as its own file and upload that.`
+      );
+    }
+
+    return { content: XLSX.utils.sheet_to_csv(sheet), notices };
   } finally {
     for (const key of Reflect.ownKeys(Object.prototype)) {
       if (!prototypeKeysBefore.has(key)) {
@@ -141,7 +166,7 @@ function readWorkbookAsCsv(buffer: ArrayBuffer): string {
  * Single entry point on purpose - the hardening above must not end up applied to
  * only one of the two upload paths.
  */
-async function readFileContent(file: File): Promise<string> {
+async function readFileContent(file: File): Promise<ParseResult> {
   const ext = file.name.toLowerCase().split('.').pop();
   const isExcel = ext === 'xlsx' || ext === 'xls';
 
@@ -166,7 +191,7 @@ async function readFileContent(file: File): Promise<string> {
   }
 
   // Read as text for CSV
-  return file.text();
+  return { content: await file.text(), notices: [] };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -262,6 +287,7 @@ export const usePrismStore = create<PrismState>((set, get) => ({
         content: null,
         validationStatus: 'pending',
         validationError: null,
+        notices: [],
       },
       processing: {
         status: 'validating',
@@ -289,6 +315,7 @@ export const usePrismStore = create<PrismState>((set, get) => ({
             content: null,
             validationStatus: 'invalid',
             validationError: validationResult.error || 'Invalid file',
+            notices: [],
           },
           processing: initialProgress,
           error: {
@@ -301,7 +328,7 @@ export const usePrismStore = create<PrismState>((set, get) => ({
       }
 
       // Read file content - convert Excel to CSV if needed
-      const content = await readFileContent(file);
+      const { content, notices } = await readFileContent(file);
 
       set({
         file: {
@@ -309,6 +336,7 @@ export const usePrismStore = create<PrismState>((set, get) => ({
           content,
           validationStatus: 'valid',
           validationError: null,
+          notices,
         },
         processing: {
           status: 'parsing',
@@ -507,7 +535,10 @@ export const usePrismStore = create<PrismState>((set, get) => ({
     }
 
     // Read file content
-    const content = await readFileContent(file);
+    const { content, notices: parseNotices } = await readFileContent(file);
+    if (parseNotices.length > 0) {
+      set((state) => ({ file: { ...state.file, notices: parseNotices } }));
+    }
 
     // Extract columns from first row
     const firstLine = content.split('\n')[0];

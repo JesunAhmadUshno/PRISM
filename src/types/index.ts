@@ -9,7 +9,7 @@
 // FILE TYPES
 // ═══════════════════════════════════════════════════════════════════════════
 
-export type SupportedFileType = 'csv' | 'xlsx' | 'xml';
+export type SupportedFileType = 'csv' | 'xlsx';
 
 export interface FileMetadata {
   readonly name: string;
@@ -252,6 +252,13 @@ export interface PrismState {
     content: string | null;
     validationStatus: 'pending' | 'valid' | 'invalid';
     validationError: string | null;
+    /**
+     * Non-fatal facts about how the file was read that the user must see, for
+     * example that a workbook had several worksheets and only the first was
+     * analysed. The analysis succeeded, but on less than the whole file, and
+     * saying nothing was the most likely source of a silently wrong answer.
+     */
+    notices: string[];
   };
   
   // Multi-dataset state
