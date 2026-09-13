@@ -238,7 +238,7 @@ Per page. Everything below is deliberately boring, which is correct for this lay
 
   <title>Analyze a spreadsheet without uploading it | PRISM</title>
   <meta name="description"
-        content="Drop an Excel, CSV or XML file into your browser and get statistics and
+        content="Drop an Excel or CSV file into your browser and get statistics and
                  charts. Parsing and computation run in the tab. Open the network panel
                  and watch it stay empty.">
 
@@ -251,7 +251,7 @@ Per page. Everything below is deliberately boring, which is correct for this lay
   <meta property="og:site_name"    content="PRISM">
   <meta property="og:url"          content="https://prism.example.com/">
   <meta property="og:title"        content="Analyze a spreadsheet without uploading it">
-  <meta property="og:description"  content="Statistics and charts for Excel, CSV and XML,
+  <meta property="og:description"  content="Statistics and charts for Excel and CSV,
                                             computed in your browser tab. Nothing is
                                             uploaded. Verify it yourself in the network
                                             panel.">
@@ -265,7 +265,7 @@ Per page. Everything below is deliberately boring, which is correct for this lay
   <!-- Twitter / X -->
   <meta name="twitter:card"        content="summary_large_image">
   <meta name="twitter:title"       content="Analyze a spreadsheet without uploading it">
-  <meta name="twitter:description" content="Statistics and charts for Excel, CSV and XML,
+  <meta name="twitter:description" content="Statistics and charts for Excel and CSV,
                                             computed in your browser tab. Nothing is
                                             uploaded.">
   <meta name="twitter:image"       content="https://prism.example.com/assets/og-default.png">

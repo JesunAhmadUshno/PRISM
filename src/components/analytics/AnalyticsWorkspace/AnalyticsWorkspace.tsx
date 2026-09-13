@@ -149,7 +149,10 @@ const STATISTICAL_TESTS: StatisticalTest[] = [
   { id: 'independent_t', name: 'Independent t-Test', category: 'means', description: 'Compare means of two independent groups', dataRequirement: 'One numeric, one categorical (2 groups)', whenToUse: 'Compare two separate groups' },
   { id: 'paired_t', name: 'Paired t-Test', category: 'means', description: 'Compare means from same group at different times', dataRequirement: 'Two paired numeric variables', whenToUse: 'Before/after comparisons' },
   { id: 'one_way_anova', name: 'One-Way ANOVA', category: 'means', description: 'Compare means across 3+ groups', dataRequirement: 'One numeric, one categorical (3+ groups)', whenToUse: 'Compare multiple groups' },
-  { id: 'two_way_anova', name: 'Two-Way ANOVA', category: 'means', description: 'Compare means with two factors', dataRequirement: 'One numeric, two categorical', whenToUse: 'Multiple factors affecting outcome' },
+  // Named for what the engine actually runs. It performs two independent
+  // one-way ANOVAs with a Bonferroni correction, with no interaction term, so
+  // labelling it "Two-Way ANOVA" promised an analysis it does not do.
+  { id: 'two_way_anova', name: 'Two One-Way ANOVAs', category: 'means', description: 'Test two factors separately, Bonferroni corrected', dataRequirement: 'One numeric, two categorical', whenToUse: 'Two factors, no interaction estimated' },
   
   // Proportions tests
   { id: 'chi_square_ind', name: 'Chi-Square Independence', category: 'proportions', description: 'Test association between categorical variables', dataRequirement: 'Two categorical variables', whenToUse: 'Check if variables are related' },

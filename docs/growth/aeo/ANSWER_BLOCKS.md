@@ -56,7 +56,7 @@ traced to the tree, it does not belong in this file.
 **Also asked as:** What does PRISM do? What is PRISM Analytics?
 
 **Short answer:**
-PRISM Analytics is a browser-based data analysis tool for CSV, Excel and XML
+PRISM Analytics is a browser-based data analysis tool for CSV and Excel
 files. You open a web page, choose a file from your computer, and the parsing,
 statistics and charts are all computed locally in the browser using WebAssembly.
 The file itself is never uploaded to a server.
@@ -313,7 +313,7 @@ of", and only with the non-certification stated in the same breath.
 ### C1. What file formats does PRISM support?
 
 **Short answer:**
-PRISM reads CSV, Excel (.xlsx and .xls) and XML files. It does not currently
+PRISM reads CSV and Excel (.xlsx and .xls) files. It does not currently
 support JSON, Parquet, database connections, Google Sheets or any other format.
 
 **Full answer:**
@@ -497,7 +497,7 @@ An invented performance number is the fastest way to lose a technical audience.
 ### D3. What are PRISM's main limitations?
 
 **Short answer:**
-PRISM reads only CSV, Excel and XML; it reads only the first worksheet of a
+PRISM reads only CSV and Excel; it reads only the first worksheet of a
 workbook; it has no export or download feature; its charts truncate large
 datasets rather than sampling them; it needs an internet connection on first
 load; its dataset size is limited by browser memory and has not yet been

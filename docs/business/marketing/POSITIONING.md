@@ -23,7 +23,7 @@ it is exposure. This is the current state of the evidence.
 | There is no fetch, XMLHttpRequest, WebSocket or sendBeacon anywhere in src/ | A recursive grep for those four tokens across src/ | VERIFIED |
 | Parsing and statistics run in the tab | SheetJS in the page, Pyodide in a Web Worker over WebAssembly | VERIFIED |
 | The user can watch the network tab stay empty after load | DevTools, Network panel, disable cache, drop a file | VERIFIED, and this is the demo |
-| Files accepted: Excel, CSV, XML | The supported MIME map in src/security/validator.ts | VERIFIED |
+| Files accepted: Excel, CSV | The supported MIME map in src/security/validator.ts | VERIFIED |
 | Analysis produced: column type inference, descriptive statistics, chart recommendations, outlier / trend / correlation flags | src/python/prism_core.py | VERIFIED as present, NOT verified as correct, see 0.2 |
 
 ### 0.2 Claims that are currently OFF LIMITS
@@ -89,7 +89,7 @@ LAUNCH_PLAN.md Section 1, not a caveat.
 ### 1.2 Compressed forms
 
 - **Nine words:** Analyze the spreadsheet you are not allowed to upload.
-- **One line:** PRISM runs statistics and charts on your Excel, CSV or XML file entirely
+- **One line:** PRISM runs statistics and charts on your Excel or CSV file entirely
   inside your browser tab, so the file never leaves your machine.
 - **Elevator, for an auditor:** You know the PBC file you cannot put in a SaaS tool. Drop it
   in PRISM instead. Nothing is transmitted, because there is nothing on the other end to

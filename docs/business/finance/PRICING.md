@@ -156,7 +156,7 @@ Prices in USD. Annual tiers billed annually in advance.
 
 **$0. Forever. No account. No email. No card. No usage limit.**
 
-Includes every analytical capability in the product: Excel, CSV and XML ingestion, column
+Includes every analytical capability in the product: Excel and CSV ingestion, column
 type inference, descriptive statistics, the automated insight pass and the chart layer.
 The only limit is the user's own RAM, which is a limit imposed by physics rather than by us.
 

@@ -34,7 +34,7 @@ Pillar 1 from being a party trick. If an asset does not carry Pillar 1, ask why 
 Channel variants. Same claim, different entry point.
 
 - **Default / website hero:**
-  Statistics and charts for Excel, CSV and XML files, computed entirely inside your browser
+  Statistics and charts for Excel and CSV files, computed entirely inside your browser
   tab. The file never leaves your machine.
 
 - **Hacker News, Show HN title:**
@@ -65,7 +65,7 @@ Channel variants. Same claim, different entry point.
 
 **Standard version, use this unless there is a reason not to:**
 
-> PRISM is a browser-only analytics tool. You drop in an Excel, CSV or XML file and it
+> PRISM is a browser-only analytics tool. You drop in an Excel or CSV file and it
 > profiles the columns, computes descriptive statistics and draws the charts that suit the
 > data. All of it runs inside the tab: SheetJS parses the file in the page, and Pyodide runs
 > Python, pandas and numpy in a Web Worker through WebAssembly. There is no upload step,
@@ -78,7 +78,7 @@ Channel variants. Same claim, different entry point.
 
 **Short version, under 60 words, for a bio or a directory listing:**
 
-> Browser-only analytics for Excel, CSV and XML. Statistics and charts computed inside your
+> Browser-only analytics for Excel and CSV. Statistics and charts computed inside your
 > tab using Python via WebAssembly. No upload, no account, no server: the page's Content
 > Security Policy blocks outbound connections and the source contains no network calls.
 > Built for analysts in regulated work who cannot send a file to a cloud vendor.
@@ -108,7 +108,7 @@ The problem was never the analysis. The problem is the upload.
 
 Drop the file into the page. PRISM detects the column types, computes descriptive statistics
 across every column, flags outliers and correlations, and recommends and draws the charts the
-data actually supports. Excel, CSV and XML.
+data actually supports. Excel and CSV.
 
 **How it works, and why the claim holds**
 

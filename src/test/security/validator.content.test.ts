@@ -82,10 +82,10 @@ describe('validateFile (full pipeline)', () => {
     expect(result.error).toContain('Unsupported file type');
   });
 
-  it('never content-scans a spreadsheet, only CSV and XML', async () => {
-    // TODO(BUG): validateFile() (validator.ts:106-112) runs validateContentSecurity
-    // for 'csv' and 'xml' only. XLSX cell values reach the parser and the UI
-    // without ever being screened for the DANGEROUS_PATTERNS above — the same
+  it('never content-scans a spreadsheet, only CSV', async () => {
+    // TODO(BUG): validateFile() runs validateContentSecurity
+    // for 'csv' only. XLSX cell values reach the parser and the UI
+    // without ever being screened for the DANGEROUS_PATTERNS above - the same
     // payload that is blocked as CSV sails through when zipped as .xlsx.
     const zipHeader = new Uint8Array(64);
     zipHeader.set([0x50, 0x4b, 0x03, 0x04]);

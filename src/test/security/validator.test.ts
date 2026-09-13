@@ -1,5 +1,5 @@
 /**
- * Unit tests for src/security/validator.ts — size / extension / MIME / magic bytes.
+ * Unit tests for src/security/validator.ts - size / extension / MIME / magic bytes.
  *
  * These guard the "first line of defense" claim in the module header, so every
  * assertion here is about a real accept/reject decision, not a shape check.
@@ -12,6 +12,7 @@ import {
   validateMagicBytes,
   MAX_FILE_SIZE,
   MIN_FILE_SIZE,
+  MAGIC_BYTES,
 } from '@/security/validator';
 
 /** Builds a File with an exact byte header, so magic-byte checks are real. */
@@ -21,7 +22,7 @@ function fileWithHeader(bytes: number[], name: string, type = ''): File {
   return new File([padded], name, { type });
 }
 
-const ZIP_HEADER = [0x50, 0x4b, 0x03, 0x04]; // "PK\x03\x04" — xlsx/ooxml
+const ZIP_HEADER = [0x50, 0x4b, 0x03, 0x04]; // "PK\x03\x04" - xlsx/ooxml
 const OLE2_HEADER = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]; // legacy .xls
 
 describe('validateFileSize', () => {
@@ -55,12 +56,22 @@ describe('validateFileExtension', () => {
     ['data.csv', true],
     ['book.xlsx', true],
     ['legacy.xls', true],
-    ['feed.xml', true],
+    ['feed.xml', false],
     ['payload.exe', false],
     ['script.js', false],
     ['README', false],
   ])('%s -> valid=%s', (name, expected) => {
     expect(validateFileExtension(name).isValid).toBe(expected);
+  });
+
+  it('rejects .xml with a message telling the user how to proceed', () => {
+    // XML used to be accepted here even though no XML parser exists anywhere in
+    // the codebase, so the markup reached pandas.read_csv and produced silently
+    // wrong tables. Validation now rejects it and names the way out.
+    const result = validateFileExtension('feed.xml');
+    expect(result.isValid).toBe(false);
+    expect(result.error).toContain('XML files are not supported');
+    expect(result.error).toContain('CSV or Excel');
   });
 
   it('is case-insensitive on the extension', () => {
@@ -84,7 +95,7 @@ describe('validateMimeType', () => {
   });
 
   it('accepts a hostile MIME type as long as the extension is allowed', () => {
-    // TODO(BUG): validator.ts:172-193 — the extension fallback runs even when a
+    // TODO(BUG): validator.ts:172-193 - the extension fallback runs even when a
     // MIME type IS present and is explicitly not in SUPPORTED_TYPES, so the MIME
     // check can never reject anything that got past validateFileExtension.
     expect(validateMimeType('application/x-msdownload', 'payload.csv').isValid).toBe(true);
@@ -93,7 +104,13 @@ describe('validateMimeType', () => {
   it('rejects when neither MIME type nor extension is supported', () => {
     const result = validateMimeType('application/x-msdownload', 'payload.exe');
     expect(result.isValid).toBe(false);
-    expect(result.error).toContain('CSV, Excel, or XML');
+    expect(result.error).toContain('CSV or Excel');
+  });
+
+  it('rejects an XML MIME type and extension, which are no longer supported', () => {
+    const result = validateMimeType('text/xml', 'feed.xml');
+    expect(result.isValid).toBe(false);
+    expect(result.error).toContain('XML files are not supported');
   });
 });
 
@@ -119,7 +136,7 @@ describe('validateMagicBytes', () => {
     // TODO(BUG): getFileType() (validator.ts:294-301) maps ".xls" to the "xlsx"
     // branch, but MAGIC_BYTES.xlsx (validator.ts:46-50) only lists ZIP/PK
     // signatures. A real BIFF8 .xls starts with the OLE2 compound-document magic
-    // D0 CF 11 E0 A1 B1 1A E1, so it can never pass — while the uploader,
+    // D0 CF 11 E0 A1 B1 1A E1, so it can never pass - while the uploader,
     // README and validateFileExtension all advertise .xls support.
     const legacyXls = fileWithHeader(OLE2_HEADER, 'legacy.xls', 'application/vnd.ms-excel');
     const result = await validateMagicBytes(legacyXls);
@@ -127,21 +144,13 @@ describe('validateMagicBytes', () => {
     expect(result.error).toContain('does not match Excel format');
   });
 
-  it('accepts an XML declaration header', async () => {
+  it('no longer recognises XML as a format of its own', async () => {
+    // XML support was removed: there is no XML parser in the codebase, so the
+    // format is rejected earlier, by validateFileExtension. getFileType() maps
+    // ".xml" to null here, which leaves the magic byte stage with nothing to
+    // check. validateFile() never reaches this point for an .xml file.
     const xml = new File(['<?xml version="1.0"?><root/>'], 'feed.xml', { type: 'text/xml' });
     await expect(validateMagicBytes(xml)).resolves.toEqual({ isValid: true });
-  });
-
-  it('accepts any .xml file that merely starts with "<"', async () => {
-    // Documents the permissive fallback at validator.ts:235-237.
-    const html = new File(['<html><body>not xml</body></html>'], 'feed.xml', { type: 'text/xml' });
-    await expect(validateMagicBytes(html)).resolves.toEqual({ isValid: true });
-  });
-
-  it('rejects an .xml file that does not start with "<"', async () => {
-    const notXml = new File(['plain text, no markup at all'], 'feed.xml', { type: 'text/xml' });
-    const result = await validateMagicBytes(notXml);
-    expect(result.isValid).toBe(false);
-    expect(result.error).toContain('valid XML');
+    expect(MAGIC_BYTES['xml']).toBeUndefined();
   });
 });

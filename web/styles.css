@@ -1467,6 +1467,10 @@ pre code {
 /* Tag colour is redundant with the tag's own word. No meaning is conveyed by
    hue alone anywhere on this page. */
 .limit__tag--open       { background: var(--bad-tint);  color: var(--bad-text);  border-color: var(--bad-edge); }
+/* An item that WAS open and has since been closed. Kept visible rather than
+   deleted: on a page arguing that limits are stated plainly, showing what got
+   fixed is worth more than quietly removing the paragraph. */
+.limit__tag--closed     { background: var(--ok-tint);   color: var(--ok-text);   border-color: var(--ok-edge); }
 .limit__tag--unverified { background: var(--warn-tint); color: var(--warn-text); border-color: var(--warn-edge); }
 .limit__tag--unmeasured { background: var(--warn-tint); color: var(--warn-text); border-color: var(--warn-edge); }
 .limit__tag--design     { background: var(--info-tint); color: var(--info-text); border-color: var(--info-edge); }

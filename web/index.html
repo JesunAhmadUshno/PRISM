@@ -40,11 +40,12 @@
       lines 33 to 39 and 1248 to 1266
     - Seventeen statistical tests dispatched to scipy.stats:
       src/workers/prism.worker.js lines 569 to 854
-    - xlsx@0.18.5 still present: package.json line 28
-    - Licence incoherence: LICENSE line 1 is MIT, package.json line 69 is
-      PROPRIETARY, README reads open source
-    - MAX_FILE_SIZE is 500 MB while its own comment says 50 MB:
-      src/security/validator.ts line 20
+    - xlsx@0.18.5 REMOVED; SheetJS 0.20.3 vendored at public/vendor/ and
+      loaded with an SHA-384 hash by src/lib/sheetjs-loader.ts. npm audit
+      reports no xlsx entry, and cdn.sheetjs.com is gone from the CSP
+    - Licence now coherent: LICENSE line 1 and package.json both read MIT
+    - MAX_FILE_SIZE is 500 MB: src/security/validator.ts line 20. It is an
+      upload guard, not a benchmarked capability
 
   Nothing on this page is a compliance claim. The words certified, compliant,
   conformant, WCAG AAA and ISO 27001 do not appear as claims about PRISM, and
@@ -53,7 +54,7 @@
 -->
 
 <title>PRISM: analyze the spreadsheet you are not allowed to upload</title>
-<meta name="description" content="Browser-only analytics for Excel, CSV and XML. Statistics and charts computed inside your tab with Python via WebAssembly. No upload, no account, no server.">
+<meta name="description" content="Browser-only analytics for Excel and CSV. Statistics and charts computed inside your tab with Python via WebAssembly. No upload, no account, no server.">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
@@ -127,7 +128,7 @@
         <p class="eyebrow">Local-first analytics</p>
         <h1 id="hero-title">Analyze the spreadsheet you are&nbsp;not allowed to upload.</h1>
         <p class="lede">
-          Statistics and charts for Excel, CSV and XML files, computed entirely inside your
+          Statistics and charts for Excel and CSV files, computed entirely inside your
           browser tab. The file never leaves your machine.
         </p>
 
@@ -429,7 +430,7 @@ base-uri     'self';</code></pre>
               <p class="arch__step-num" aria-hidden="true">1</p>
               <h4 class="arch__step-title">The file is opened, not uploaded</h4>
               <p class="arch__step-body">
-                You drop an <code>.xlsx</code>, <code>.csv</code> or <code>.xml</code> file onto
+                You drop an <code>.xlsx</code>, <code>.xls</code> or <code>.csv</code> file onto
                 the page. SheetJS parses it in the tab, using the browser's File API. The bytes go
                 from your disk into the tab's memory and nowhere else.
               </p>
@@ -604,15 +605,21 @@ base-uri     'self';</code></pre>
 
       <ul class="limits">
         <li class="limit">
-          <p class="limit__tag limit__tag--open">Open item</p>
-          <h3>A known high severity advisory sits in the dependency tree</h3>
+          <p class="limit__tag limit__tag--closed">Closed</p>
+          <h3>The spreadsheet parser advisory is remediated</h3>
           <p>
-            PRISM currently depends on <code>xlsx@0.18.5</code>, which carries a high severity
-            prototype pollution advisory with no fixed version published on npm. The remediation
-            is migrating to the SheetJS CDN distribution, and the policy already permits that
-            origin. The work is in progress and it is not finished. We are not going to tell you
-            it does not matter. For a product whose entire argument is security posture, it
-            matters more than usual.
+            PRISM used to depend on <code>xlsx@0.18.5</code>, which carries a high severity
+            prototype pollution advisory (GHSA-4r6h-8v6p-xvw6) that npm reports as
+            <code>fixAvailable: false</code>, because SheetJS moved distribution off npm and
+            the registry copy is frozen at the vulnerable version.
+          </p>
+          <p>
+            It is gone. SheetJS 0.20.3, which fixes both that advisory and the ReDoS one, is
+            vendored at <code>public/vendor/</code> and loaded on demand with an SHA-384
+            integrity hash. <code>npm audit</code> no longer reports <code>xlsx</code> at all.
+            Vendoring rather than using the CDN keeps Excel parsing working offline and let us
+            remove <code>cdn.sheetjs.com</code> from the Content-Security-Policy entirely.
+            Check it: <code>grep xlsx package.json</code> returns nothing.
           </p>
         </li>
 
@@ -640,10 +647,11 @@ base-uri     'self';</code></pre>
           <p>
             A browser tab has a memory ceiling and PRISM holds the parsed data inside it. A real
             limit exists. No number is published here because nothing has been benchmarked
-            honestly, and the size constant in the repository currently contradicts its own
-            comment: <code>MAX_FILE_SIZE</code> is set to 500 MB on a line whose comment says
-            50 MB. Once the benchmark exists it will be published with the method, the machine and
-            the browser stated, along with the point at which it degrades.
+            honestly. <code>MAX_FILE_SIZE</code> is set to 500 MB, but that constant is an
+            upload guard, not a measured capability: nobody has established the size at which
+            a tab actually degrades. Once the benchmark exists it will be published with the
+            method, the machine and the browser stated, along with the point at which it
+            degrades.
           </p>
           <p>
             Until then: PRISM is built for the everyday analytical extract, the file that arrived
@@ -666,15 +674,19 @@ base-uri     'self';</code></pre>
         </li>
 
         <li class="limit">
-          <p class="limit__tag limit__tag--open">Open item</p>
-          <h3>The licensing is currently incoherent</h3>
+          <p class="limit__tag limit__tag--closed">Closed</p>
+          <h3>The licensing now says one thing</h3>
           <p>
-            The <code>LICENSE</code> file contains the MIT licence text, <code>package.json</code>
-            says <code>PROPRIETARY</code>, and the README reads as open source. Those cannot all be
-            true. It is being fixed. Until the files agree, the honest answer to "is it open
-            source" is that the source is readable, which is the property that matters for
-            verifying the privacy claim, and the terms are being made coherent. Do not make a
-            licensing decision based on this paragraph.
+            The <code>LICENSE</code> file and <code>package.json</code> both read MIT. They used
+            to disagree, with <code>package.json</code> declaring <code>PROPRIETARY</code> over an
+            MIT licence file. An MIT grant is binding and irrevocable for every copy already
+            distributed, so declaring otherwise elsewhere did not retract it: it only made the
+            repository assert two incompatible things at once.
+          </p>
+          <p>
+            PRISM is MIT licensed today. Whether it stays permissive or moves to a
+            source-available licence is an open commercial question and is not settled here.
+            Any change applies to future releases only.
           </p>
         </li>
 

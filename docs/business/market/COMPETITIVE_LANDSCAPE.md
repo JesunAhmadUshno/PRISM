@@ -251,7 +251,7 @@ compute in the tab. That contrast is real, vendor-documented and defensible.
 
 ## 5. Scoreboard
 
-Threat is scored against PRISM's *actual current product*: drop an Excel, CSV or XML file, receive
+Threat is scored against PRISM's *actual current product*: drop an Excel or CSV file, receive
 descriptive statistics, generated insights and charts, entirely inside the tab.
 
 | Product | Tier | Explicit no-upload claim | Statistics | Charts | Price | Threat |
