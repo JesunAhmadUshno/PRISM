@@ -122,6 +122,17 @@
   <!-- 1. HERO                                                            -->
   <!-- ================================================================== -->
   <section class="hero" aria-labelledby="hero-title">
+
+    <!--
+      The prism. A white beam enters from the left, strikes the glass, and
+      leaves as a spectrum: the product's own metaphor, running live. It is
+      decorative, so it is aria-hidden and it is the first thing dropped under
+      prefers-reduced-motion. Drawn by hand in app.js on a 2D canvas, because
+      pulling in an animation library would contradict the argument this page
+      is making three paragraphs further down.
+    -->
+    <canvas class="hero__prism" id="prism-canvas" aria-hidden="true"></canvas>
+
     <div class="shell hero__grid">
 
       <div class="hero__copy">
