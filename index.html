@@ -14,9 +14,33 @@
          
          Last Security Audit: 2026-01-24
          ═══════════════════════════════════════════════════════════════════════ -->
+    <!--
+      WHY script-src ALLOWS blob:
+
+      Removing it breaks the product. The Web Worker is created from a blob: URL
+      (src/stores/prismStore.ts) specifically so it inherits this policy: a
+      worker loaded from an https: URL takes its CSP from that response's
+      headers, and GitHub Pages sends none, which left the only thread holding
+      plaintext user data running under no policy at all.
+
+      That worker then runs the Pyodide loader through importScripts() on a
+      blob: URL (src/workers/prism.worker.js). importScripts cannot carry an
+      integrity attribute, so the bytes are fetched first with a pinned SHA-384
+      that the BROWSER enforces, and only the verified bytes become the blob.
+
+      So the blob can only ever contain content that already matched a pinned
+      digest, and anyone able to create and execute a blob in this context
+      already has script execution. The integrity guarantee is preserved and
+      the real attack surface barely moves.
+
+      This was learned the hard way: the worker-inherits-CSP fix shipped without
+      blob: here and every upload failed in production with
+      "Failed to execute 'importScripts'". No test loads Pyodide, so nothing
+      caught it. src/test/security/csp.test.ts now guards this line.
+    -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'none';
-        script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net/pyodide/;
+        script-src 'self' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net/pyodide/;
         style-src 'self' 'unsafe-inline';
         style-src-elem 'self' 'unsafe-inline';
         img-src 'self' data: blob:;
