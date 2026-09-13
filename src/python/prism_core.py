@@ -1,4 +1,34 @@
 """
+!!! UNUSED MODULE - NOT THE ENGINE THAT RUNS !!!
+
+Nothing imports this file. Verified: no reference to "prism_core" exists
+anywhere in src/, vite.config.ts, index.html or package.json.
+
+The analytics engine that ACTUALLY EXECUTES is embedded as a Python string
+inside src/workers/prism.worker.js and is loaded into Pyodide from there.
+That copy has 22 function definitions to this file's 12, and the two define
+analyze_csv differently. They have diverged.
+
+Consequence: reading this file to understand PRISM's statistics gives you the
+wrong answer, and any fix applied here changes nothing at runtime. An audit of
+this repo would review dead code and miss the live engine entirely.
+
+Decision required, deliberately left open:
+  (a) delete this file, since src/workers/prism.worker.js is the real engine, or
+  (b) extract the embedded engine back out to this file and have the worker
+      fetch it, which restores testability - the embedded copy currently has
+      no test harness of any kind.
+
+Option (b) is the better end state: Python embedded in a JS template literal
+cannot be linted, typed or unit tested, which is why the paired t-test and
+one-sample t-test bugs both survived in it. But it is a real refactor, not a
+cleanup, so it is logged rather than done.
+
+Recorded in LEDGER.md. Until resolved, treat this file as documentation of an
+older design, not as running code.
+
+-----------------------------------------------------------------------------
+
 PRISM Core Analytics Engine
 
 Browser-based statistical analysis and visualization recommendation system.

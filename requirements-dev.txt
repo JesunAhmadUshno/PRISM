@@ -1,0 +1,23 @@
+# Development-only dependencies for the statistics known-answer suite
+# (tests/python). Nothing here ships to the browser: the product loads NumPy,
+# pandas and SciPy from Pyodide at runtime, and this file exists solely so CI
+# and a local checkout can execute the real engine against published reference
+# values.
+#
+# Pinned exactly, for the same reason package-lock.json is committed: a test
+# that proves a p-value is only as trustworthy as the library that computed the
+# expected value. An unpinned SciPy could change a default method between runs
+# and turn a real regression into a green tick, or the reverse.
+#
+# Verified against Python 3.12 (the version .github/workflows/stats.yml uses)
+# and 3.14. Every pin below requires Python 3.11 or newer.
+#
+# When bumping SciPy, re-read tests/python/test_statistics.py: the expected
+# values taken from R and from textbooks are version independent, but the ones
+# computed by calling SciPy in the test are only meaningful if the engine and
+# the test agree on the method.
+
+pytest==9.0.2
+numpy==2.4.2
+pandas==2.3.3
+scipy==1.17.1

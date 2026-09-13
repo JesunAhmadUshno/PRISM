@@ -1,0 +1,74 @@
+# PRISM statistics correctness gate.
+#
+# ci.yml checks that the TypeScript compiles, lints, builds and that the
+# security boundary holds. It does not check a single number the product
+# computes, because the analytics engine is Python embedded in a JavaScript
+# template literal inside src/workers/prism.worker.js and vitest cannot reach
+# it.
+#
+# This workflow is that missing check. tests/python/extract_engine.py pulls the
+# embedded Python back out of the worker and exec's it, and
+# tests/python/test_statistics.py runs the real engine functions against
+# published reference values: R's datasets::sleep results from Student (1908),
+# Fisher's tea-tasting table, closed-form chi-square and Mann-Whitney values,
+# and hand-derived descriptive statistics.
+#
+# Rules for this file:
+#   - No `continue-on-error`. A wrong statistic must fail the build.
+#   - No `--passWithNoTests` equivalent. If extraction breaks, the harness
+#     raises EngineExtractionError and the job fails loudly rather than
+#     reporting a green run over zero assertions.
+#   - Do not narrow the trigger to paths under src/workers/. The harness also
+#     depends on its own pins in requirements-dev.txt, and a SciPy bump can
+#     change a result without the worker changing at all.
+
+name: Statistics
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  known-answer-tests:
+    name: Known-answer tests for the statistics engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Report the versions the expected values were checked against
+        run: |
+          python --version
+          python -c "import numpy, pandas, scipy; print('numpy', numpy.__version__); print('pandas', pandas.__version__); print('scipy', scipy.__version__)"
+
+      # Run separately from pytest so a broken extraction is reported as a
+      # broken extraction, not as forty unrelated test failures.
+      - name: Verify the engine can still be extracted from the worker
+        run: python tests/python/extract_engine.py
+
+      - name: Known-answer statistics tests
+        run: python -m pytest tests/python -q

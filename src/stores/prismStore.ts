@@ -8,7 +8,7 @@
  */
 
 import { create } from 'zustand';
-import * as XLSX from 'xlsx';
+import { loadSheetJS } from '@/lib/sheetjs-loader';
 import type {
   PrismState,
   FileMetadata,
@@ -23,6 +23,8 @@ import type {
   WorkerResultPayload,
 } from '@/types';
 import { validateFile } from '@/security/validator';
+// Inlined at build time so the worker can be started from a blob: URL (see getWorker)
+import prismWorkerSource from '../workers/prism.worker.js?raw';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // INITIAL STATE
@@ -49,6 +51,10 @@ const initialState = {
     content: null as string | null,
     validationStatus: 'pending' as const,
     validationError: null as string | null,
+    // Things the user must be told about how their file was read, for example
+    // that a workbook had several sheets and only the first was analysed.
+    // These are not errors: the analysis succeeded, but on less than the whole file.
+    notices: [] as string[],
   },
   // Multi-dataset state
   datasets: [] as import('@/types').Dataset[],
@@ -69,28 +75,199 @@ const initialState = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
+// FILE READING
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Upper bound on rows pulled out of a workbook. XLSX.read runs on the main
+ * thread, so an unbounded sheet - a zip bomb still under the 500MB file limit -
+ * would otherwise hang the UI with no recovery path.
+ */
+const MAX_SHEET_ROWS = 100000;
+
+/**
+ * Parser surface is pinned off deliberately: formulas, HTML rendering, number
+ * formats, styles and VBA are all attacker-controlled and none of them are used
+ * by PRISM - only cell values reach sheet_to_csv.
+ */
+const XLSX_READ_OPTIONS: Record<string, unknown> = {
+  type: 'array',
+  sheetRows: MAX_SHEET_ROWS,
+  cellFormula: false,
+  cellHTML: false,
+  cellNF: false,
+  cellStyles: false,
+  bookVBA: false,
+  bookDeps: false,
+};
+
+/** What a workbook parse produced, plus anything the user must be told about it. */
+interface ParseResult {
+  content: string;
+  notices: string[];
+}
+
+/**
+ * Parse a workbook and return its first sheet as CSV.
+ *
+ * Security: this now runs SheetJS 0.20.3, vendored in public/vendor/ and loaded
+ * on demand by src/lib/sheetjs-loader.ts. The previous npm build, xlsx@0.18.5,
+ * was frozen and unpatchable, carrying prototype pollution (GHSA-4r6h-8v6p-xvw6)
+ * reachable through exactly this call on bytes the user just dragged in.
+ *
+ * The Object.prototype bracket below is kept even though 0.20.3 fixes that
+ * advisory. It costs a set construction per upload, it is the only thing
+ * standing between a future parser regression and the rest of the application,
+ * and this parser's whole job is chewing on hostile input.
+ */
+async function readWorkbookAsCsv(buffer: ArrayBuffer): Promise<ParseResult> {
+  const XLSX = await loadSheetJS();
+  const prototypeKeysBefore = new Set<PropertyKey>(Reflect.ownKeys(Object.prototype));
+
+  try {
+    const workbook = XLSX.read(buffer, XLSX_READ_OPTIONS);
+
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      throw new Error('Excel file has no sheets');
+    }
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) {
+      throw new Error('Could not read sheet');
+    }
+
+    // Only the first worksheet is analysed. Saying nothing about the others was
+    // the most likely source of a silently wrong answer in the product: a user
+    // whose data sits on sheet 2 got a confident analysis of sheet 1.
+    const notices: string[] = [];
+    if (workbook.SheetNames.length > 1) {
+      const skipped = workbook.SheetNames.slice(1);
+      notices.push(
+        `This workbook has ${workbook.SheetNames.length} worksheets. ` +
+          `Only "${sheetName}" was analysed. ` +
+          `Not analysed: ${skipped.map((s) => `"${s}"`).join(', ')}. ` +
+          `To analyse another sheet, save it as its own file and upload that.`
+      );
+    }
+
+    return { content: XLSX.utils.sheet_to_csv(sheet), notices };
+  } finally {
+    for (const key of Reflect.ownKeys(Object.prototype)) {
+      if (!prototypeKeysBefore.has(key)) {
+        Reflect.deleteProperty(Object.prototype, key);
+      }
+    }
+  }
+}
+
+/**
+ * Read an uploaded file as text, converting Excel workbooks to CSV.
+ *
+ * Single entry point on purpose - the hardening above must not end up applied to
+ * only one of the two upload paths.
+ */
+async function readFileContent(file: File): Promise<ParseResult> {
+  const ext = file.name.toLowerCase().split('.').pop();
+  const isExcel = ext === 'xlsx' || ext === 'xls';
+
+  if (isExcel) {
+    // Read Excel and convert to CSV using SheetJS
+    const buffer = await file.arrayBuffer();
+    return readWorkbookAsCsv(buffer);
+  }
+
+  // XML is advertised in the uploader, the validator and the README, but no XML
+  // parser exists anywhere in this codebase: the worker has zero XML handling,
+  // so the raw "<?xml ...>" text was previously handed to pandas.read_csv. That
+  // produced garbage columns presented as a successful analysis rather than an
+  // error, which is the worst possible outcome for a product whose buyers are
+  // auditors. Fail loudly until a real parser is implemented.
+  if (ext === 'xml') {
+    throw new Error(
+      'XML is not supported yet. The format is listed in the interface by mistake: ' +
+        'no XML parser is implemented, and parsing it as CSV would produce incorrect ' +
+        'results rather than an error. Convert the file to CSV or Excel first.'
+    );
+  }
+
+  // Read as text for CSV
+  return { content: await file.text(), notices: [] };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // WORKER MANAGEMENT
 // ═══════════════════════════════════════════════════════════════════════════
 
 let worker: Worker | null = null;
+let workerBlobUrl: string | null = null;
+let workerWarmUpRequested = false;
 
 function getWorker(): Worker {
   if (!worker) {
+    // Security: the worker is the only thread that ever holds the plaintext
+    // user data, so it must run under the document's Content-Security-Policy.
+    // A worker loaded from an https: URL does NOT inherit the document policy -
+    // its policy is built from the worker script's own response headers, and the
+    // GitHub Pages deploy target cannot send any, so the worker would execute
+    // unpoliced with fetch/XHR/WebSocket/importScripts open to every origin.
+    // blob: is a local scheme, so a worker created from one inherits the
+    // creating document's policy container (the CSP in index.html), which
+    // denies every origin except the Pyodide CDN.
+    if (!workerBlobUrl) {
+      workerBlobUrl = URL.createObjectURL(
+        new Blob([prismWorkerSource], { type: 'text/javascript' })
+      );
+    }
     // Use classic worker (not module) for importScripts compatibility
-    worker = new Worker(
-      new URL('../workers/prism.worker.js', import.meta.url),
-      { type: 'classic' }
-    );
+    worker = new Worker(workerBlobUrl, { type: 'classic' });
   }
   return worker;
+}
+
+/**
+ * Create the worker and ask it to start loading Pyodide + pandas/numpy (~25 MB)
+ * before any file is picked, so the download overlaps the user reading the
+ * landing page instead of being serialised behind file validation and reading.
+ *
+ * Safe to call repeatedly: the worker's initializePyodide() is idempotent, and
+ * no message handler is attached here so in-flight progress belongs to whichever
+ * action runs next.
+ */
+export function warmUpWorker(): void {
+  if (typeof Worker === 'undefined' || workerWarmUpRequested) {
+    return;
+  }
+  workerWarmUpRequested = true;
+
+  try {
+    getWorker().postMessage({
+      type: 'INIT',
+      payload: {},
+      timestamp: Date.now(),
+      id: crypto.randomUUID(),
+    });
+  } catch (error) {
+    // Warm-up is best effort - never block app start. getWorker() will create
+    // the worker again on demand, which self-initialises on load.
+    workerWarmUpRequested = false;
+    console.error('Pyodide warm-up failed:', error);
+  }
 }
 
 function terminateWorker(): void {
   if (worker) {
     worker.terminate();
     worker = null;
+    workerWarmUpRequested = false;
+  }
+  if (workerBlobUrl) {
+    URL.revokeObjectURL(workerBlobUrl);
+    workerBlobUrl = null;
   }
 }
+
+// Start the Pyodide/pandas download as soon as the store module is imported.
+warmUpWorker();
 
 // ═══════════════════════════════════════════════════════════════════════════
 // STORE DEFINITION
@@ -110,6 +287,7 @@ export const usePrismStore = create<PrismState>((set, get) => ({
         content: null,
         validationStatus: 'pending',
         validationError: null,
+        notices: [],
       },
       processing: {
         status: 'validating',
@@ -137,6 +315,7 @@ export const usePrismStore = create<PrismState>((set, get) => ({
             content: null,
             validationStatus: 'invalid',
             validationError: validationResult.error || 'Invalid file',
+            notices: [],
           },
           processing: initialProgress,
           error: {
@@ -149,31 +328,7 @@ export const usePrismStore = create<PrismState>((set, get) => ({
       }
 
       // Read file content - convert Excel to CSV if needed
-      const ext = file.name.toLowerCase().split('.').pop();
-      const isExcel = ext === 'xlsx' || ext === 'xls';
-      
-      let content: string;
-      if (isExcel) {
-        // Read Excel and convert to CSV using SheetJS
-        const buffer = await file.arrayBuffer();
-        const workbook = XLSX.read(buffer, { type: 'array' });
-        
-        // Get first sheet
-        const sheetName = workbook.SheetNames[0];
-        if (!sheetName) {
-          throw new Error('Excel file has no sheets');
-        }
-        const sheet = workbook.Sheets[sheetName];
-        if (!sheet) {
-          throw new Error('Could not read sheet');
-        }
-        
-        // Convert to CSV
-        content = XLSX.utils.sheet_to_csv(sheet);
-      } else {
-        // Read as text for CSV/XML
-        content = await file.text();
-      }
+      const { content, notices } = await readFileContent(file);
 
       set({
         file: {
@@ -181,6 +336,7 @@ export const usePrismStore = create<PrismState>((set, get) => ({
           content,
           validationStatus: 'valid',
           validationError: null,
+          notices,
         },
         processing: {
           status: 'parsing',
@@ -379,24 +535,9 @@ export const usePrismStore = create<PrismState>((set, get) => ({
     }
 
     // Read file content
-    const ext = file.name.toLowerCase().split('.').pop();
-    const isExcel = ext === 'xlsx' || ext === 'xls';
-    
-    let content: string;
-    if (isExcel) {
-      const buffer = await file.arrayBuffer();
-      const workbook = XLSX.read(buffer, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      if (!sheetName) {
-        throw new Error('Excel file has no sheets');
-      }
-      const sheet = workbook.Sheets[sheetName];
-      if (!sheet) {
-        throw new Error('Could not read sheet');
-      }
-      content = XLSX.utils.sheet_to_csv(sheet);
-    } else {
-      content = await file.text();
+    const { content, notices: parseNotices } = await readFileContent(file);
+    if (parseNotices.length > 0) {
+      set((state) => ({ file: { ...state.file, notices: parseNotices } }));
     }
 
     // Extract columns from first row

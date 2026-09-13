@@ -1,0 +1,889 @@
+/* =========================================================================
+   PRISM Design Tokens
+   File: docs/design/ui/tokens.css
+   Status: deliverable. This file is valid, standalone CSS and is meant to be
+           imported, not read as an example.
+
+   Owner:   UI and visual design
+   Version: 1.0.0
+   Date:    2026-09-13
+
+   WHAT THIS IS
+   ------------
+   The single source of truth for PRISM colour, type, space, radius,
+   elevation, motion and layout values. Every colour pair in this file has a
+   measured WCAG 2.x contrast ratio recorded next to it. The measurement
+   method and the full audit are in DESIGN_SYSTEM.md in this directory.
+
+   HOW TO IMPORT
+   -------------
+   This file is additive and defines custom properties only in its token
+   sections. It declares no global element selectors, so importing it cannot
+   restyle existing markup on its own.
+
+     Plain CSS:
+       @import url("./tokens.css");   (must be the first rule in the file)
+
+     Vite / PostCSS entry (recommended, before Tailwind directives):
+       @import "../../docs/design/ui/tokens.css";
+       @tailwind base;
+       @tailwind components;
+       @tailwind utilities;
+
+     Tailwind theme wiring (tailwind.config.js), example:
+       colors: {
+         canvas:  "var(--prism-color-canvas)",
+         surface: "var(--prism-color-surface)",
+         ink:     "var(--prism-color-text)",
+       }
+
+   THEMING CONTRACT
+   ----------------
+   Light is the default and is defined on bare :root, so no value depends on
+   a media query alone. Dark is applied by any one of:
+       <html class="dark">            (what PRISM uses today)
+       <html data-theme="dark">
+       the OS setting, unless data-theme="light" is set explicitly
+   Increased-contrast and Windows forced-colors are handled at the end.
+
+   NAMING
+   ------
+   --prism-<group>-<role>[-<variant>]
+   Roles are semantic (surface, text, border, accent, danger). Do not
+   reference a raw hex in product code. Add a role instead.
+
+   ON CONTRAST NUMBERS IN THIS FILE
+   --------------------------------
+   A number such as "17.85:1" is a measured ratio between two specific
+   colours, computed with the WCAG 2.x relative-luminance formula. Clearing
+   4.5:1 or 7:1 on a pair is a measurement of that pair. It is not a claim
+   that PRISM conforms to any WCAG level. Conformance is a whole-product
+   assessment that has not been performed.
+   ========================================================================= */
+
+
+/* =========================================================================
+   1. LIGHT THEME  (default, bare :root)
+   Reference surfaces used for every ratio below:
+     surface  #ffffff   sunken #f1f5f9   canvas #f8fafc
+   ========================================================================= */
+
+:root {
+  color-scheme: light;
+
+  /* ---- 1.1 Surfaces -------------------------------------------------- */
+  --prism-color-canvas:          #f8fafc;  /* page background            */
+  --prism-color-surface:         #ffffff;  /* cards, panels, popovers    */
+  --prism-color-surface-sunken:  #f1f5f9;  /* wells, table headers, code */
+  --prism-color-surface-overlay: #ffffff;  /* modals, menus              */
+  --prism-color-scrim:           rgb(11 18 32 / 0.60); /* modal backdrop */
+
+  /* ---- 1.2 Text ------------------------------------------------------
+     ratios are  surface / canvas / sunken                               */
+  --prism-color-text:            #0f172a;  /* 17.85 / 17.06 / 16.30      */
+  --prism-color-text-secondary:  #334155;  /* 10.35 /  9.90 /  9.45      */
+  --prism-color-text-tertiary:   #434e60;  /*  8.41 /  8.04 /  7.68      */
+  --prism-color-text-disabled:   #5c6879;  /*  5.66 /  5.41 /  5.17      */
+  --prism-color-text-on-accent:  #ffffff;  /* 7.56 on --accent-solid     */
+  --prism-color-text-on-solid:   #ffffff;  /* 7.68 min on solid fills    */
+
+  /* ---- 1.3 Borders ---------------------------------------------------
+     border must clear 3:1 because it carries component boundaries and
+     state (SC 1.4.11 non-text contrast). border-subtle is decorative
+     only and must never be the sole carrier of meaning.                 */
+  --prism-color-border:          #767f8f;  /*  4.04 /  3.86 /  3.68      */
+  --prism-color-border-strong:   #475569;  /*  7.58 /  7.24 /  6.92      */
+  --prism-color-border-subtle:   #cbd5e1;  /*  1.48 on surface. DECORATIVE */
+
+  /* ---- 1.4 Accent (brand) -------------------------------------------- */
+  --prism-color-accent-text:         #0c4a6e; /* 9.46 / 9.04 / 8.63      */
+  --prism-color-accent-solid:        #075985; /* white on it: 7.56       */
+  --prism-color-accent-solid-hover:  #0c4a6e; /* white on it: 9.46       */
+  --prism-color-accent-solid-active: #082f49; /* darker press state      */
+  --prism-color-accent-subtle:       #e0f2fe; /* accent-text on it: 8.24 */
+  --prism-color-accent-edge:         #075985; /* 6.59 on accent-subtle   */
+
+  /* ---- 1.5 Focus indicator -------------------------------------------
+     Two-tone by design. See DESIGN_SYSTEM.md section 5 for why a single
+     colour cannot clear 3:1 against every surface it lands on, and why
+     this pair provably can.                                             */
+  --prism-color-focus-inner:     #ffffff;
+  --prism-color-focus-outer:     #0b1220;
+
+  /* ---- 1.6 Selection -------------------------------------------------- */
+  --prism-color-selection-bg:    #bae6fd;
+  --prism-color-selection-text:  #0f172a;  /* 13.45 on selection-bg      */
+
+  /* ---- 1.7 Semantic: info --------------------------------------------- */
+  --prism-color-info-bg:         #eff6ff;
+  --prism-color-info-text:       #1e3a8a;  /*  9.52 on info-bg           */
+  --prism-color-info-edge:       #1e40af;  /*  8.01 on info-bg           */
+  --prism-color-info-solid:      #1e40af;  /* white on it: 8.72          */
+
+  /* ---- 1.8 Semantic: success ------------------------------------------ */
+  --prism-color-success-bg:      #ecfdf5;
+  --prism-color-success-text:    #064e3b;  /*  9.23 on success-bg        */
+  --prism-color-success-edge:    #065f46;  /*  7.29 on success-bg        */
+  --prism-color-success-solid:   #065f46;  /* white on it: 7.68          */
+
+  /* ---- 1.9 Semantic: warning ------------------------------------------ */
+  --prism-color-warning-bg:      #fffbeb;
+  --prism-color-warning-text:    #78350f;  /*  8.75 on warning-bg        */
+  --prism-color-warning-edge:    #92400e;  /*  7.09 on warning-bg        */
+  --prism-color-warning-solid:   #78350f;  /* white on it: 9.07          */
+
+  /* ---- 1.10 Semantic: danger ------------------------------------------ */
+  --prism-color-danger-bg:       #fef2f2;
+  --prism-color-danger-text:     #7f1d1d;  /*  9.16 on danger-bg         */
+  --prism-color-danger-edge:     #991b1b;  /*  7.60 on danger-bg         */
+  --prism-color-danger-solid:    #991b1b;  /* white on it: 8.31          */
+
+  /* ---- 1.11 Chart series ----------------------------------------------
+     Five categorical series, built as a luminance ladder so the order
+     survives greyscale. Ratios vs surface #ffffff:
+       1 #2c105d 15.68   2 #114162 10.73   3 #11605e 7.35
+       4 #ba4e00  5.03   5 #ab8513  3.44
+     Worst ratio of any series against any light surface: 3.14.
+     Worst ratio between two adjacent series: 1.46.
+     1.46 is NOT enough to separate series by colour alone. A second
+     channel is mandatory. See DESIGN_SYSTEM.md section 7.               */
+  --prism-chart-1: #2c105d;
+  --prism-chart-2: #114162;
+  --prism-chart-3: #11605e;
+  --prism-chart-4: #ba4e00;
+  --prism-chart-5: #ab8513;
+  --prism-chart-other: #5c6879;            /* the sixth bucket, always "Other" */
+
+  --prism-chart-axis: #767f8f;             /* 4.04 on surface. Load bearing.  */
+  --prism-chart-grid: #cbd5e1;             /* 1.48 on surface. Decorative.    */
+  --prism-chart-plot-bg: #ffffff;
+  --prism-chart-annotation: #0f172a;       /* 17.85 on plot background        */
+  --prism-chart-truncation-note: #7f1d1d;  /* 9.16 on danger-bg               */
+}
+
+
+/* =========================================================================
+   2. DARK THEME
+   Reference surfaces used for every ratio below:
+     canvas #0b1220   surface #131c2e   sunken #0f172a
+   Applied via .dark (PRISM's current strategy), [data-theme="dark"], or the
+   OS preference when no explicit light choice is set.
+   ========================================================================= */
+
+:root.dark,
+:root[data-theme="dark"],
+.prism-theme-dark {
+  color-scheme: dark;
+
+  --prism-color-canvas:          #0b1220;
+  --prism-color-surface:         #131c2e;
+  --prism-color-surface-sunken:  #0f172a;
+  --prism-color-surface-overlay: #1a2540;
+  --prism-color-scrim:           rgb(2 6 14 / 0.70);
+
+  /* ratios are  canvas / surface / sunken */
+  --prism-color-text:            #f1f5f9;  /* 17.09 / 15.54 / 16.30      */
+  --prism-color-text-secondary:  #cbd5e1;  /* 12.61 / 11.47 / 12.02      */
+  --prism-color-text-tertiary:   #a9b4c6;  /*  8.94 /  8.13 /  8.53      */
+  --prism-color-text-disabled:   #8b97a8;  /*  6.32 /  5.75 /  6.03      */
+  --prism-color-text-on-accent:  #0b1220;  /* 8.74 on --accent-solid     */
+  --prism-color-text-on-solid:   #0b1220;  /* 9.74 min on solid fills    */
+
+  --prism-color-border:          #657185;  /*  3.79 /  3.45 /  3.62      */
+  --prism-color-border-strong:   #a9b4c6;  /*  8.94 /  8.13 /  8.53      */
+  --prism-color-border-subtle:   #334155;  /*  1.81 on canvas. DECORATIVE */
+
+  --prism-color-accent-text:         #7dd3fc; /* 11.23 / 10.21 / 10.71   */
+  --prism-color-accent-solid:        #38bdf8; /* ink on it: 8.74         */
+  --prism-color-accent-solid-hover:  #7dd3fc; /* ink on it: 11.23        */
+  --prism-color-accent-solid-active: #bae6fd; /* ink on it: 14.11        */
+  --prism-color-accent-subtle:       #0b2f47; /* accent-text on it: 8.33 */
+  --prism-color-accent-edge:         #38bdf8; /* 6.48 on accent-subtle   */
+
+  --prism-color-focus-inner:     #0b1220;
+  --prism-color-focus-outer:     #f8fafc;
+
+  --prism-color-selection-bg:    #075985;
+  --prism-color-selection-text:  #f8fafc;  /* 7.23 on selection-bg       */
+
+  --prism-color-info-bg:         #11213f;
+  --prism-color-info-text:       #bfdbfe;  /* 11.25 on info-bg           */
+  --prism-color-info-edge:       #60a5fa;  /*  6.29 on info-bg           */
+  --prism-color-info-solid:      #60a5fa;  /* ink on it: 7.36            */
+
+  --prism-color-success-bg:      #082a22;
+  --prism-color-success-text:    #a7f3d0;  /* 12.00 on success-bg        */
+  --prism-color-success-edge:    #34d399;  /*  8.01 on success-bg        */
+  --prism-color-success-solid:   #34d399;  /* ink on it: 9.74            */
+
+  --prism-color-warning-bg:      #2a1d0b;
+  --prism-color-warning-text:    #fde68a;  /* 13.18 on warning-bg        */
+  --prism-color-warning-edge:    #fbbf24;  /*  9.84 on warning-bg        */
+  --prism-color-warning-solid:   #fbbf24;  /* ink on it: 11.22           */
+
+  --prism-color-danger-bg:       #2b1216;
+  --prism-color-danger-text:     #fecaca;  /* 12.09 on danger-bg         */
+  --prism-color-danger-edge:     #f87171;  /*  6.32 on danger-bg         */
+  --prism-color-danger-solid:    #fca5a5;  /* ink on it: 9.86            */
+
+  /* Chart, dark. Ratios vs surface #131c2e:
+       1 #8443f5 3.33   2 #258bd4 4.64   3 #09b3ad 6.54
+       4 #f1b184 9.21   5 #ffe74f 13.62
+     Worst ratio of any series against any dark surface: 3.33.
+     Worst ratio between two adjacent series: 1.39.                      */
+  --prism-chart-1: #8443f5;
+  --prism-chart-2: #258bd4;
+  --prism-chart-3: #09b3ad;
+  --prism-chart-4: #f1b184;
+  --prism-chart-5: #ffe74f;
+  --prism-chart-other: #8b97a8;
+
+  --prism-chart-axis: #657185;             /* 3.45 on surface. Load bearing. */
+  --prism-chart-grid: #334155;             /* 1.64 on surface. Decorative.   */
+  --prism-chart-plot-bg: #131c2e;
+  --prism-chart-annotation: #f1f5f9;       /* 15.54 on plot background       */
+  --prism-chart-truncation-note: #fecaca;  /* 12.09 on danger-bg             */
+}
+
+/* OS dark preference, only when the user has not explicitly chosen light. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.light) {
+    color-scheme: dark;
+
+    --prism-color-canvas:          #0b1220;
+    --prism-color-surface:         #131c2e;
+    --prism-color-surface-sunken:  #0f172a;
+    --prism-color-surface-overlay: #1a2540;
+    --prism-color-scrim:           rgb(2 6 14 / 0.70);
+
+    --prism-color-text:            #f1f5f9;
+    --prism-color-text-secondary:  #cbd5e1;
+    --prism-color-text-tertiary:   #a9b4c6;
+    --prism-color-text-disabled:   #8b97a8;
+    --prism-color-text-on-accent:  #0b1220;
+    --prism-color-text-on-solid:   #0b1220;
+
+    --prism-color-border:          #657185;
+    --prism-color-border-strong:   #a9b4c6;
+    --prism-color-border-subtle:   #334155;
+
+    --prism-color-accent-text:         #7dd3fc;
+    --prism-color-accent-solid:        #38bdf8;
+    --prism-color-accent-solid-hover:  #7dd3fc;
+    --prism-color-accent-solid-active: #bae6fd;
+    --prism-color-accent-subtle:       #0b2f47;
+    --prism-color-accent-edge:         #38bdf8;
+
+    --prism-color-focus-inner:     #0b1220;
+    --prism-color-focus-outer:     #f8fafc;
+
+    --prism-color-selection-bg:    #075985;
+    --prism-color-selection-text:  #f8fafc;
+
+    --prism-color-info-bg:         #11213f;
+    --prism-color-info-text:       #bfdbfe;
+    --prism-color-info-edge:       #60a5fa;
+    --prism-color-info-solid:      #60a5fa;
+
+    --prism-color-success-bg:      #082a22;
+    --prism-color-success-text:    #a7f3d0;
+    --prism-color-success-edge:    #34d399;
+    --prism-color-success-solid:   #34d399;
+
+    --prism-color-warning-bg:      #2a1d0b;
+    --prism-color-warning-text:    #fde68a;
+    --prism-color-warning-edge:    #fbbf24;
+    --prism-color-warning-solid:   #fbbf24;
+
+    --prism-color-danger-bg:       #2b1216;
+    --prism-color-danger-text:     #fecaca;
+    --prism-color-danger-edge:     #f87171;
+    --prism-color-danger-solid:    #fca5a5;
+
+    --prism-chart-1: #8443f5;
+    --prism-chart-2: #258bd4;
+    --prism-chart-3: #09b3ad;
+    --prism-chart-4: #f1b184;
+    --prism-chart-5: #ffe74f;
+    --prism-chart-other: #8b97a8;
+
+    --prism-chart-axis: #657185;
+    --prism-chart-grid: #334155;
+    --prism-chart-plot-bg: #131c2e;
+    --prism-chart-annotation: #f1f5f9;
+    --prism-chart-truncation-note: #fecaca;
+  }
+}
+
+
+/* =========================================================================
+   3. TYPOGRAPHY
+   Base is 16px (1rem) and is never hard-set in px, so the user's browser
+   font-size preference and the in-app A / A+ / A++ control both scale the
+   whole system. Every size below is expressed in rem for that reason.
+   ========================================================================= */
+
+:root {
+  /* ---- 3.1 Families -------------------------------------------------- */
+  --prism-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                     Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --prism-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+                     "Liberation Mono", monospace;
+  /* Numerals in tables and statistics must not jitter between rows. */
+  --prism-font-numeric: var(--prism-font-mono);
+  --prism-font-feature-tabular: "tnum" 1, "lnum" 1;
+
+  /* ---- 3.2 Size ramp -------------------------------------------------
+     Ratio is roughly 1.125 at the small end and 1.25 at the display end.
+     Sizes 100 and below are captions and metadata only, never body copy. */
+  --prism-text-050: 0.75rem;    /* 12px. Legal and axis ticks only.   */
+  --prism-text-100: 0.875rem;   /* 14px. Metadata, chips, table meta. */
+  --prism-text-200: 1rem;       /* 16px. Minimum body size.           */
+  --prism-text-300: 1.125rem;   /* 18px. Default body.                */
+  --prism-text-400: 1.25rem;    /* 20px. Lead paragraph, card title.  */
+  --prism-text-500: 1.5rem;     /* 24px. h4 / section heading.        */
+  --prism-text-600: 1.875rem;   /* 30px. h3.                          */
+  --prism-text-700: 2.25rem;    /* 36px. h2.                          */
+  --prism-text-800: 3rem;       /* 48px. h1 / hero.                   */
+
+  /* ---- 3.3 Line height -----------------------------------------------
+     Body line height is 1.6. WCAG 2.x SC 1.4.8 asks for at least 1.5
+     within a paragraph, and SC 1.4.12 asks that a user override to 1.5
+     not break the layout. 1.6 satisfies both without an override.      */
+  --prism-leading-tight:   1.2;   /* display sizes 700 and 800   */
+  --prism-leading-snug:    1.3;
+  --prism-leading-normal:  1.5;   /* UI labels, buttons, table   */
+  --prism-leading-relaxed: 1.6;   /* body copy. The default.     */
+  --prism-leading-loose:   1.75;  /* long-form help text         */
+
+  /* ---- 3.4 Weight ----------------------------------------------------
+     Only four weights. A system-ui stack cannot be trusted to render more
+     than these four distinctly on every platform.                      */
+  --prism-weight-regular:  400;
+  --prism-weight-medium:   500;
+  --prism-weight-semibold: 600;
+  --prism-weight-bold:     700;
+
+  /* ---- 3.5 Tracking --------------------------------------------------- */
+  --prism-tracking-tight:  -0.02em;  /* 700 and 800 only */
+  --prism-tracking-normal:  0;
+  --prism-tracking-wide:    0.02em;  /* all-caps chips   */
+
+  /* ---- 3.6 Measure ----------------------------------------------------
+     Line length ceiling for running text. SC 1.4.8 puts the bar at 80
+     characters. 68ch leaves headroom once the user enlarges text.
+     The app's current max-w-7xl main column does not use this.         */
+  --prism-measure:      68ch;
+  --prism-measure-wide: 80ch;
+}
+
+
+/* =========================================================================
+   4. SPACE
+   A strict 4px grid. Nothing in the product may use a value off this scale.
+   ========================================================================= */
+
+:root {
+  --prism-space-0:   0;
+  --prism-space-1:   0.25rem;  /*  4px */
+  --prism-space-2:   0.5rem;   /*  8px */
+  --prism-space-3:   0.75rem;  /* 12px */
+  --prism-space-4:   1rem;     /* 16px */
+  --prism-space-5:   1.25rem;  /* 20px */
+  --prism-space-6:   1.5rem;   /* 24px */
+  --prism-space-8:   2rem;     /* 32px */
+  --prism-space-10:  2.5rem;   /* 40px */
+  --prism-space-12:  3rem;     /* 48px */
+  --prism-space-16:  4rem;     /* 64px */
+  --prism-space-20:  5rem;     /* 80px */
+  --prism-space-24:  6rem;     /* 96px */
+
+  /* ---- 4.1 Targets ---------------------------------------------------
+     24px is the WCAG 2.2 AA minimum target size (SC 2.5.8).
+     44px is the enhanced target size (SC 2.5.5).
+     PRISM uses 44px as the floor for every interactive control.        */
+  --prism-target-min:      1.5rem;   /* 24px */
+  --prism-target:          2.75rem;  /* 44px */
+  --prism-target-large:    3rem;     /* 48px */
+  --prism-target-gap:      var(--prism-space-2); /* spacing between targets */
+
+  /* ---- 4.2 Layout ----------------------------------------------------- */
+  --prism-gutter:          var(--prism-space-4);  /* mobile page gutter  */
+  --prism-gutter-md:       var(--prism-space-6);
+  --prism-gutter-lg:       var(--prism-space-8);
+  --prism-container-text:  46rem;   /* 736px, reading column            */
+  --prism-container-app:   80rem;   /* 1280px, tool chrome and tables   */
+  --prism-stack:           var(--prism-space-6);  /* vertical rhythm    */
+  --prism-section:         var(--prism-space-12);
+}
+
+
+/* =========================================================================
+   5. RADIUS
+   ========================================================================= */
+
+:root {
+  --prism-radius-none: 0;
+  --prism-radius-sm:   0.25rem;  /*  4px. Chips inside dense rows.      */
+  --prism-radius-md:   0.5rem;   /*  8px. Inputs, buttons, small cards. */
+  --prism-radius-lg:   0.75rem;  /* 12px. Cards, alerts, panels.        */
+  --prism-radius-xl:   1rem;     /* 16px. Modals, dropzone.             */
+  --prism-radius-full: 9999px;   /* Pills, avatars, progress track.     */
+}
+
+
+/* =========================================================================
+   6. ELEVATION
+   Five levels. Each level pairs a shadow with a border token, because
+   shadows are removed entirely in Windows forced-colors mode and an
+   elevation expressed only as a shadow disappears there.
+   ========================================================================= */
+
+:root {
+  --prism-elevation-0: none;
+  --prism-elevation-1: 0 1px 2px 0 rgb(15 23 42 / 0.06),
+                       0 1px 3px 0 rgb(15 23 42 / 0.10);
+  --prism-elevation-2: 0 2px 4px -1px rgb(15 23 42 / 0.08),
+                       0 4px 8px -2px rgb(15 23 42 / 0.10);
+  --prism-elevation-3: 0 4px 8px -2px rgb(15 23 42 / 0.08),
+                       0 12px 20px -6px rgb(15 23 42 / 0.12);
+  --prism-elevation-4: 0 8px 16px -4px rgb(15 23 42 / 0.10),
+                       0 24px 40px -12px rgb(15 23 42 / 0.16);
+
+  /* Semantic aliases. Use these, not the numbered levels. */
+  --prism-elevation-flat:    var(--prism-elevation-0);  /* inline, in-flow  */
+  --prism-elevation-card:    var(--prism-elevation-1);  /* resting card     */
+  --prism-elevation-raised:  var(--prism-elevation-2);  /* hovered card     */
+  --prism-elevation-popover: var(--prism-elevation-3);  /* menu, tooltip    */
+  --prism-elevation-modal:   var(--prism-elevation-4);  /* dialog           */
+}
+
+:root.dark,
+:root[data-theme="dark"],
+.prism-theme-dark {
+  /* Dark surfaces need a lighter top edge, not a heavier shadow, to read
+     as raised. Shadow alone is nearly invisible on a dark canvas.       */
+  --prism-elevation-1: 0 1px 2px 0 rgb(0 0 0 / 0.40),
+                       inset 0 1px 0 0 rgb(255 255 255 / 0.04);
+  --prism-elevation-2: 0 2px 6px -1px rgb(0 0 0 / 0.50),
+                       inset 0 1px 0 0 rgb(255 255 255 / 0.05);
+  --prism-elevation-3: 0 8px 20px -6px rgb(0 0 0 / 0.60),
+                       inset 0 1px 0 0 rgb(255 255 255 / 0.06);
+  --prism-elevation-4: 0 16px 40px -12px rgb(0 0 0 / 0.70),
+                       inset 0 1px 0 0 rgb(255 255 255 / 0.08);
+}
+
+
+/* =========================================================================
+   7. BORDERS AND FOCUS GEOMETRY
+   ========================================================================= */
+
+:root {
+  --prism-border-width:        1px;
+  --prism-border-width-strong: 2px;   /* inputs, selected states */
+
+  /* Focus ring geometry. The ring is drawn as two stacked box-shadows so
+     that it is never clipped by overflow and never shifts layout. */
+  --prism-focus-inner-width: 2px;
+  --prism-focus-outer-width: 2px;
+  --prism-focus-offset:      2px;
+  --prism-focus-ring:
+      0 0 0 var(--prism-focus-offset) var(--prism-color-focus-inner),
+      0 0 0 calc(var(--prism-focus-offset) + var(--prism-focus-outer-width))
+            var(--prism-color-focus-outer);
+}
+
+
+/* =========================================================================
+   8. MOTION
+   Durations are tokens so that prefers-reduced-motion can collapse the
+   whole system in one place. Nothing in PRISM may hard-code a duration.
+   ========================================================================= */
+
+:root {
+  --prism-duration-instant: 0ms;
+  --prism-duration-fast:    120ms;  /* hover, press, colour change      */
+  --prism-duration-base:    200ms;  /* panel open, tab change           */
+  --prism-duration-slow:    320ms;  /* modal, route-level transition    */
+
+  --prism-ease-standard:  cubic-bezier(0.2, 0, 0, 1);
+  --prism-ease-entrance:  cubic-bezier(0, 0, 0, 1);
+  --prism-ease-exit:      cubic-bezier(0.3, 0, 1, 1);
+
+  /* Indeterminate progress. This is the one loop allowed to run without a
+     user-facing stop control, and only because it reports the state of an
+     operation the user just started and can cancel. See DESIGN_SYSTEM.md
+     section 11 on SC 2.2.2.                                            */
+  --prism-duration-spinner: 900ms;
+
+  /* Distance tokens, so reduced motion can zero translation without
+     zeroing the opacity fade that carries the same meaning. */
+  --prism-motion-rise:  4px;
+  --prism-motion-slide: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --prism-duration-fast:   1ms;
+    --prism-duration-base:   1ms;
+    --prism-duration-slow:   1ms;
+    --prism-motion-rise:     0px;
+    --prism-motion-slide:    0px;
+    /* Deliberately NOT collapsed: a frozen spinner communicates a hang.
+       The spinner is slowed instead, and every spinner must be paired
+       with a text status so the animation is never the only signal.  */
+    --prism-duration-spinner: 2000ms;
+  }
+}
+
+
+/* =========================================================================
+   9. Z-INDEX
+   A closed set. Nothing may invent a z-index outside this scale.
+   ========================================================================= */
+
+:root {
+  --prism-z-base:      0;
+  --prism-z-raised:    10;   /* sticky table header      */
+  --prism-z-sticky:    50;   /* app header               */
+  --prism-z-popover:  100;   /* menu, tooltip, combobox  */
+  --prism-z-scrim:    200;
+  --prism-z-modal:    210;
+  --prism-z-toast:    300;
+  --prism-z-skiplink: 9999;  /* always above everything  */
+}
+
+
+/* =========================================================================
+   10. INCREASED CONTRAST
+   Triggered by the OS "increase contrast" setting, and by the app's own
+   .high-contrast class so the in-product control and the OS setting land
+   on the same values.
+   ========================================================================= */
+
+.high-contrast,
+:root.high-contrast {
+  color-scheme: dark;
+
+  --prism-color-canvas:          #000000;
+  --prism-color-surface:         #000000;
+  --prism-color-surface-sunken:  #1a1a1a;  /* white on it: 17.40 */
+  --prism-color-surface-overlay: #000000;
+  --prism-color-scrim:           rgb(0 0 0 / 0.85);
+
+  --prism-color-text:            #ffffff;  /* 21.00 on #000000 */
+  --prism-color-text-secondary:  #ffffff;  /* 21.00            */
+  --prism-color-text-tertiary:   #e5e5e5;  /* 16.67            */
+  --prism-color-text-disabled:   #e5e5e5;  /* 16.67. Disabled is signalled
+                                              by aria-disabled and a struck
+                                              affordance, never by fading
+                                              the text below threshold.  */
+  --prism-color-text-on-accent:  #000000;
+  --prism-color-text-on-solid:   #000000;
+
+  --prism-color-border:          #ffffff;  /* 21.00 */
+  --prism-color-border-strong:   #ffffff;
+  --prism-color-border-subtle:   #ffffff;  /* no decorative tier here */
+
+  --prism-color-accent-text:         #00ffff;  /* 16.75 on #000000 */
+  --prism-color-accent-solid:        #00ffff;  /* black on it: 16.75 */
+  --prism-color-accent-solid-hover:  #7dffff;
+  --prism-color-accent-solid-active: #ffffff;
+  --prism-color-accent-subtle:       #000000;
+  --prism-color-accent-edge:         #00ffff;
+
+  --prism-color-focus-inner:     #000000;
+  --prism-color-focus-outer:     #ffff00;  /* 19.56 on #000000 */
+
+  --prism-color-selection-bg:    #ffff00;
+  --prism-color-selection-text:  #000000;  /* 19.56 */
+
+  --prism-color-info-bg:         #000000;
+  --prism-color-info-text:       #00ffff;  /* 16.75 */
+  --prism-color-info-edge:       #00ffff;
+  --prism-color-info-solid:      #00ffff;
+
+  --prism-color-success-bg:      #000000;
+  --prism-color-success-text:    #00ff00;  /* 15.30 */
+  --prism-color-success-edge:    #00ff00;
+  --prism-color-success-solid:   #00ff00;
+
+  --prism-color-warning-bg:      #000000;
+  --prism-color-warning-text:    #ffff00;  /* 19.56 */
+  --prism-color-warning-edge:    #ffff00;
+  --prism-color-warning-solid:   #ffff00;
+
+  --prism-color-danger-bg:       #000000;
+  --prism-color-danger-text:     #ff6b6b;  /*  7.57 */
+  --prism-color-danger-edge:     #ff6b6b;
+  --prism-color-danger-solid:    #ff6b6b;
+
+  /* Chart series in increased contrast. All are measured against #000000.
+     Separation between series is carried by the mandatory second channel,
+     not by these hues.                                                  */
+  --prism-chart-1: #ffffff;  /* 21.00 */
+  --prism-chart-2: #00ffff;  /* 16.75 */
+  --prism-chart-3: #ffff00;  /* 19.56 */
+  --prism-chart-4: #00ff00;  /* 15.30 */
+  --prism-chart-5: #ff6b6b;  /*  7.57 */
+  --prism-chart-other: #e5e5e5;
+
+  --prism-chart-axis: #ffffff;
+  --prism-chart-grid: #e5e5e5;
+  --prism-chart-plot-bg: #000000;
+  --prism-chart-annotation: #ffffff;
+  --prism-chart-truncation-note: #ffff00;
+
+  --prism-elevation-1: none;
+  --prism-elevation-2: none;
+  --prism-elevation-3: none;
+  --prism-elevation-4: none;
+  --prism-border-width: 2px;
+}
+
+@media (prefers-contrast: more) {
+  :root:not(.prism-contrast-standard) {
+    /* The OS asked for more contrast. Promote every text role one step and
+       make every decorative border load bearing. This does not repaint the
+       whole palette, it only removes the low-contrast tiers.            */
+    --prism-color-text-tertiary:  var(--prism-color-text-secondary);
+    --prism-color-text-disabled:  var(--prism-color-text-secondary);
+    --prism-color-border-subtle:  var(--prism-color-border);
+    --prism-color-border:         var(--prism-color-border-strong);
+    --prism-border-width:         2px;
+    --prism-focus-outer-width:    3px;
+  }
+}
+
+
+/* =========================================================================
+   11. FORCED COLORS (Windows High Contrast)
+   In forced-colors mode the browser overrides colour. Our job is to stop
+   fighting it: drop shadows, drop translucency, and make sure every
+   boundary that was carried by a shadow is carried by a border instead.
+   The system colour keywords below are the ones the mode actually honours.
+   ========================================================================= */
+
+@media (forced-colors: active) {
+  :root {
+    --prism-color-canvas:          Canvas;
+    --prism-color-surface:         Canvas;
+    --prism-color-surface-sunken:  Canvas;
+    --prism-color-surface-overlay: Canvas;
+    --prism-color-scrim:           Canvas;
+
+    --prism-color-text:            CanvasText;
+    --prism-color-text-secondary:  CanvasText;
+    --prism-color-text-tertiary:   CanvasText;
+    --prism-color-text-disabled:   GrayText;
+    --prism-color-text-on-accent:  HighlightText;
+    --prism-color-text-on-solid:   HighlightText;
+
+    --prism-color-border:          CanvasText;
+    --prism-color-border-strong:   CanvasText;
+    --prism-color-border-subtle:   CanvasText;
+
+    --prism-color-accent-text:         LinkText;
+    --prism-color-accent-solid:        Highlight;
+    --prism-color-accent-solid-hover:  Highlight;
+    --prism-color-accent-solid-active: Highlight;
+    --prism-color-accent-subtle:       Canvas;
+    --prism-color-accent-edge:         CanvasText;
+
+    --prism-color-focus-inner:     Canvas;
+    --prism-color-focus-outer:     CanvasText;
+
+    --prism-color-selection-bg:    Highlight;
+    --prism-color-selection-text:  HighlightText;
+
+    --prism-color-info-bg:         Canvas;
+    --prism-color-info-text:       CanvasText;
+    --prism-color-info-edge:       CanvasText;
+    --prism-color-info-solid:      Highlight;
+
+    --prism-color-success-bg:      Canvas;
+    --prism-color-success-text:    CanvasText;
+    --prism-color-success-edge:    CanvasText;
+    --prism-color-success-solid:   Highlight;
+
+    --prism-color-warning-bg:      Canvas;
+    --prism-color-warning-text:    CanvasText;
+    --prism-color-warning-edge:    CanvasText;
+    --prism-color-warning-solid:   Highlight;
+
+    --prism-color-danger-bg:       Canvas;
+    --prism-color-danger-text:     CanvasText;
+    --prism-color-danger-edge:     CanvasText;
+    --prism-color-danger-solid:    Highlight;
+
+    /* Chart hues are discarded by the mode. Series separation in forced
+       colors is carried entirely by the second channel: dash pattern,
+       marker shape and the direct label.                              */
+    --prism-chart-1: CanvasText;
+    --prism-chart-2: CanvasText;
+    --prism-chart-3: CanvasText;
+    --prism-chart-4: CanvasText;
+    --prism-chart-5: CanvasText;
+    --prism-chart-other: GrayText;
+    --prism-chart-axis: CanvasText;
+    --prism-chart-grid: GrayText;
+    --prism-chart-plot-bg: Canvas;
+    --prism-chart-annotation: CanvasText;
+    --prism-chart-truncation-note: CanvasText;
+
+    --prism-elevation-0: none;
+    --prism-elevation-1: none;
+    --prism-elevation-2: none;
+    --prism-elevation-3: none;
+    --prism-elevation-4: none;
+    --prism-border-width: 1px;
+  }
+}
+
+
+/* =========================================================================
+   12. OPT-IN WIRING
+   Everything above is inert. This section is the only part of the file that
+   paints anything, and it is scoped to .prism-ui so that importing tokens.css
+   into an app that has not adopted it yet changes nothing on screen.
+
+   To adopt: add class="prism-ui" to <body> (or to any subtree).
+   To drop:  delete this section. The tokens above stand alone.
+   ========================================================================= */
+
+.prism-ui {
+  background-color: var(--prism-color-canvas);
+  color: var(--prism-color-text);
+  font-family: var(--prism-font-sans);
+  font-size: var(--prism-text-300);
+  line-height: var(--prism-leading-relaxed);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.prism-ui :focus-visible {
+  outline: none;
+  box-shadow: var(--prism-focus-ring);
+  border-radius: inherit;
+}
+
+/* Fallback for engines without :focus-visible support. */
+.prism-ui :focus:not(:focus-visible) {
+  outline: none;
+}
+
+.prism-ui ::selection {
+  background-color: var(--prism-color-selection-bg);
+  color: var(--prism-color-selection-text);
+}
+
+.prism-ui a {
+  color: var(--prism-color-accent-text);
+  text-decoration-line: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: max(1px, 0.06em);
+}
+
+.prism-ui a:hover {
+  text-decoration-thickness: max(2px, 0.12em);
+}
+
+/* Every interactive control meets the 44px enhanced target size, except
+   links inside a paragraph, which are exempt (SC 2.5.5 inline exception)
+   and would break line boxes if forced to 44px. The current build applies
+   min-height:44px to every <a>, including inline links. Do not do that. */
+.prism-ui button,
+.prism-ui select,
+.prism-ui summary,
+.prism-ui [role="button"],
+.prism-ui [role="tab"],
+.prism-ui input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]) {
+  min-height: var(--prism-target);
+}
+
+.prism-ui input[type="checkbox"],
+.prism-ui input[type="radio"] {
+  inline-size: var(--prism-target-min);
+  block-size: var(--prism-target-min);
+}
+
+.prism-ui :is(h1, h2, h3, h4, h5, h6) {
+  line-height: var(--prism-leading-tight);
+  letter-spacing: var(--prism-tracking-tight);
+  text-wrap: balance;
+}
+
+.prism-ui p,
+.prism-ui li {
+  max-inline-size: var(--prism-measure);
+}
+
+.prism-ui :is(code, kbd, samp, pre) {
+  font-family: var(--prism-font-mono);
+  font-size: 0.9em;
+}
+
+/* Numeric columns must not shift as digits change. */
+.prism-ui [data-numeric],
+.prism-ui td[data-numeric],
+.prism-ui .prism-numeric {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: var(--prism-font-feature-tabular);
+  text-align: right;
+}
+
+.prism-ui .prism-visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.prism-ui .prism-visually-hidden:focus-within,
+.prism-ui .prism-skip-link:focus {
+  position: fixed;
+  inset-block-start: var(--prism-space-2);
+  inset-inline-start: var(--prism-space-2);
+  z-index: var(--prism-z-skiplink);
+  inline-size: auto;
+  block-size: auto;
+  clip-path: none;
+  padding: var(--prism-space-3) var(--prism-space-4);
+  background-color: var(--prism-color-surface);
+  color: var(--prism-color-text);
+  border: var(--prism-border-width-strong) solid var(--prism-color-border-strong);
+  border-radius: var(--prism-radius-md);
+  box-shadow: var(--prism-elevation-modal);
+}
+
+/* The one allowed indeterminate loop. Paired text status is required. */
+@keyframes prism-spin {
+  to { transform: rotate(360deg); }
+}
+
+.prism-ui .prism-spinner {
+  animation: prism-spin var(--prism-duration-spinner) linear infinite;
+}
+
+/* Print. Charts and tables are the deliverable; chrome is not. */
+@media print {
+  .prism-ui {
+    background: #ffffff;
+    color: #000000;
+  }
+  .prism-ui [data-print="hide"] { display: none !important; }
+  .prism-ui * { box-shadow: none !important; }
+}
+
+/* =========================================================================
+   END OF FILE
+   Changes to any colour value in this file require re-running the contrast
+   measurement described in DESIGN_SYSTEM.md section 1 and updating the
+   ratio comments in place. A colour changed without its ratio updated is a
+   defect, not a style preference.
+   ========================================================================= */
