@@ -59,9 +59,13 @@ export default defineConfig({
       output: {
         // Chunk splitting for optimal caching
         manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
+          // react/jsx-runtime must be listed explicitly: the automatic JSX
+          // transform makes it the module components actually import, so a rule
+          // naming only 'react' and 'react-dom' matched almost nothing and
+          // produced a 37-byte chunk while React itself stayed in the entry.
+          'vendor-react': ['react', 'react-dom', 'react/jsx-runtime'],
           'vendor-charts': ['recharts'],
-          'vendor-utils': ['zustand', 'dompurify', 'papaparse'],
+          'vendor-utils': ['zustand', 'dompurify'],
         },
         
         // Asset naming for cache busting

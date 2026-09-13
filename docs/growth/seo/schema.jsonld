@@ -1,0 +1,180 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": ["SoftwareApplication", "WebApplication"],
+      "@id": "https://prism.example.com/#software",
+      "name": "PRISM",
+      "alternateName": "PRISM browser analytics",
+      "url": "https://prism.example.com/",
+      "description": "PRISM is a browser-based data analytics application. It parses Excel, CSV and XML files and computes descriptive and inferential statistics and charts inside the browser tab. Parsing runs in the page and statistical computation runs in a Web Worker using Python compiled to WebAssembly. No file contents are transmitted to a server.",
+      "disambiguatingDescription": "Unrelated to the United States National Security Agency surveillance programme of the same name.",
+      "applicationCategory": "BusinessApplication",
+      "applicationSubCategory": "Data analysis and statistics",
+      "operatingSystem": "Any operating system with a modern web browser",
+      "browserRequirements": "Requires a browser with WebAssembly and Web Worker support. JavaScript must be enabled.",
+      "softwareVersion": "1.0.0",
+      "inLanguage": "en",
+      "isAccessibleForFree": true,
+      "runtimePlatform": "WebAssembly",
+      "softwareRequirements": "An internet connection is required for the first load in order to fetch the Python runtime from a public CDN. After that load, analysis runs locally in the browser.",
+      "installUrl": "https://prism.example.com/",
+      "featureList": [
+        "Reads Excel, CSV and XML files chosen from the local disk",
+        "Automatic column type inference",
+        "Descriptive statistics including mean, median, standard deviation and quartiles",
+        "One sample t test",
+        "Independent samples t test",
+        "Paired samples t test",
+        "One way analysis of variance",
+        "Two way analysis of variance",
+        "Chi square test of independence",
+        "Chi square goodness of fit test",
+        "Fisher exact test",
+        "Mann Whitney U test",
+        "Wilcoxon signed rank test",
+        "Kruskal Wallis test",
+        "Pearson correlation",
+        "Spearman rank correlation",
+        "Linear regression",
+        "F test of equality of variances",
+        "Levene test for equality of variances",
+        "Shapiro Wilk test for normality",
+        "Chart generation with screen reader data table fallbacks",
+        "Chart sonification for non visual review"
+      ],
+      "permissions": "None. PRISM does not request camera, microphone, location, notification, clipboard or persistent storage permissions. Files are read only after the user explicitly selects or drops them.",
+      "offers": {
+        "@type": "Offer",
+        "@id": "https://prism.example.com/#offer-hosted",
+        "name": "PRISM hosted",
+        "price": "0",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock",
+        "url": "https://prism.example.com/",
+        "description": "The hosted application is free to use. There is no account, no sign up and no usage limit."
+      },
+      "creator": {
+        "@id": "https://prism.example.com/#founder"
+      },
+      "publisher": {
+        "@id": "https://prism.example.com/#organization"
+      },
+      "maintainer": {
+        "@id": "https://prism.example.com/#organization"
+      },
+      "accessibilityFeature": [
+        "alternativeText",
+        "structuralNavigation",
+        "highContrastDisplay"
+      ],
+      "accessibilityHazard": [
+        "noFlashingHazard",
+        "noSoundHazard",
+        "noMotionSimulationHazard"
+      ],
+      "accessibilityAPI": "ARIA",
+      "keywords": [
+        "browser based data analysis",
+        "client side statistics",
+        "analyze spreadsheet without uploading",
+        "local first analytics",
+        "WebAssembly statistics",
+        "Excel analysis in the browser"
+      ],
+      "mainEntityOfPage": {
+        "@id": "https://prism.example.com/#webpage"
+      }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://prism.example.com/#organization",
+      "name": "PRISM",
+      "url": "https://prism.example.com/",
+      "description": "PRISM builds browser-local data analysis software. The company operates no servers that receive customer data.",
+      "founder": {
+        "@id": "https://prism.example.com/#founder"
+      },
+      "foundingLocation": {
+        "@type": "Place",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Toronto",
+          "addressRegion": "ON",
+          "addressCountry": "CA"
+        }
+      },
+      "knowsAbout": [
+        "Browser based data analysis",
+        "Client side computation",
+        "WebAssembly",
+        "Content Security Policy",
+        "Information security management",
+        "Statistical analysis"
+      ]
+    },
+    {
+      "@type": "Person",
+      "@id": "https://prism.example.com/#founder",
+      "name": "Jesun Ahmad Ushno",
+      "jobTitle": "Founder",
+      "description": "AI engineer and data architect based in Toronto. Formerly IT Advisory at KPMG, where the work included ISO/IEC 27001 audit engagements in banking and healthcare. Holds an MSc in Data Analytics and has authored two peer-reviewed papers.",
+      "worksFor": {
+        "@id": "https://prism.example.com/#organization"
+      },
+      "homeLocation": {
+        "@type": "Place",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Toronto",
+          "addressRegion": "ON",
+          "addressCountry": "CA"
+        }
+      },
+      "alumniOf": {
+        "@type": "Organization",
+        "name": "KPMG",
+        "description": "Former employer. This is a biographical fact and does not indicate any endorsement of PRISM by KPMG."
+      },
+      "knowsAbout": [
+        "ISO/IEC 27001 information security management systems",
+        "IT audit and assurance",
+        "DMAIC process improvement",
+        "Data analytics",
+        "Data architecture"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://prism.example.com/#website",
+      "url": "https://prism.example.com/",
+      "name": "PRISM",
+      "description": "Analyze a spreadsheet without uploading it.",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://prism.example.com/#organization"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://prism.example.com/#webpage",
+      "url": "https://prism.example.com/",
+      "name": "Analyze a spreadsheet without uploading it",
+      "description": "Drop an Excel, CSV or XML file into your browser and get statistics and charts. Parsing and computation run in the tab.",
+      "isPartOf": {
+        "@id": "https://prism.example.com/#website"
+      },
+      "about": {
+        "@id": "https://prism.example.com/#software"
+      },
+      "primaryImageOfPage": {
+        "@type": "ImageObject",
+        "url": "https://prism.example.com/assets/og-default.png",
+        "width": 1200,
+        "height": 630,
+        "caption": "A browser network panel showing no requests while a spreadsheet is analysed."
+      },
+      "inLanguage": "en"
+    }
+  ]
+}

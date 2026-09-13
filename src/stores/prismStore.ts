@@ -151,7 +151,21 @@ async function readFileContent(file: File): Promise<string> {
     return readWorkbookAsCsv(buffer);
   }
 
-  // Read as text for CSV/XML
+  // XML is advertised in the uploader, the validator and the README, but no XML
+  // parser exists anywhere in this codebase: the worker has zero XML handling,
+  // so the raw "<?xml ...>" text was previously handed to pandas.read_csv. That
+  // produced garbage columns presented as a successful analysis rather than an
+  // error, which is the worst possible outcome for a product whose buyers are
+  // auditors. Fail loudly until a real parser is implemented.
+  if (ext === 'xml') {
+    throw new Error(
+      'XML is not supported yet. The format is listed in the interface by mistake: ' +
+        'no XML parser is implemented, and parsing it as CSV would produce incorrect ' +
+        'results rather than an error. Convert the file to CSV or Excel first.'
+    );
+  }
+
+  // Read as text for CSV
   return file.text();
 }
 
