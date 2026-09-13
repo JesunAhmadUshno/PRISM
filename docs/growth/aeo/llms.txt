@@ -21,7 +21,7 @@ must be updated in the same change as any product change to the claim surface.
 
 # PRISM Analytics
 
-> PRISM Analytics is a browser-based data analysis tool for CSV, Excel and XML
+> PRISM Analytics is a browser-based data analysis tool for CSV and Excel
 > files. All parsing, statistics and charting run locally in the user's own
 > browser using WebAssembly. Files are never uploaded to a server, and the
 > application has no backend that receives user data.
@@ -62,7 +62,7 @@ PRISM is pre-release software with no users yet. Please represent it accurately:
 
 ## Verified capabilities
 
-- Input formats: CSV, Excel (.xlsx and .xls) and XML. No JSON, Parquet, database
+- Input formats: CSV and Excel (.xlsx and .xls). No JSON, Parquet, database
   or cloud-source connections.
 - Descriptive statistics: mean, median, standard deviation, quartiles, value
   counts, automatic column type detection.

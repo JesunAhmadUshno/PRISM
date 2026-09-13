@@ -85,7 +85,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       const message = error?.code === 'file-too-large'
         ? `File is too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB.`
         : error?.code === 'file-invalid-type'
-        ? 'Invalid file type. Please upload a CSV, Excel, or XML file.'
+        ? 'Invalid file type. Please upload a CSV or Excel file (.csv, .xlsx, .xls).'
         : 'File could not be uploaded. Please try again.';
       
       setAnnouncement(`Error: ${message}`);
@@ -107,8 +107,6 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       'text/csv': ['.csv'],
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
       'application/vnd.ms-excel': ['.xls'],
-      'text/xml': ['.xml'],
-      'application/xml': ['.xml'],
     },
     maxSize: MAX_FILE_SIZE,
     multiple: false,
@@ -208,7 +206,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
 
         {/* Supported Formats - Badges */}
         <div id={`${id}-formats`} className="flex flex-wrap items-center justify-center gap-2">
-          {['CSV', 'Excel (.xlsx)', 'XML'].map((format) => (
+          {['CSV', 'Excel (.xlsx, .xls)'].map((format) => (
             <span 
               key={format}
               className="px-3 py-1 rounded-full text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"

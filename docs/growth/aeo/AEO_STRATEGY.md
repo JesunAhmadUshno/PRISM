@@ -62,7 +62,7 @@ Every row below was confirmed by reading the file on 2026-09-13.
 | 17 inferential statistical tests are implemented | `src/workers/prism.worker.js` lines 569 to 846 |
 | scipy is loaded lazily, only on the first statistical test | `src/workers/prism.worker.js:1551-1560` |
 | pandas and numpy load eagerly at startup | `src/workers/prism.worker.js:1355` |
-| Accepted input formats are CSV, XLSX/XLS and XML | `src/security/validator.ts:157` |
+| Accepted input formats are CSV and XLSX/XLS | `src/security/validator.ts:157` |
 | Only the first worksheet of a workbook is read | `src/stores/prismStore.ts:118` |
 | No export or download feature exists | grep for download/saveAs across `src/`, zero matches outside comments |
 | `xlsx@0.18.5` is still a static import | `src/stores/prismStore.ts:11`, `package.json` |
@@ -270,7 +270,7 @@ MECHANISM, plus judgement. A passage tends to be quoted when it is:
 - **Self-contained.** It answers the question without requiring the sentence
   before it. Anaphora is the enemy: "It does not do this" is unliftable, because
   lifted out of context it means nothing.
-- **Declarative and specific.** "PRISM reads CSV, XLSX and XML" beats "PRISM
+- **Declarative and specific.** "PRISM reads CSV and XLSX" beats "PRISM
   supports many common formats." Specificity is not just better writing, it is
   a stronger retrieval match against the specific thing the user asked.
 - **Correctly scoped.** A sentence with its own qualifier attached survives
@@ -430,9 +430,9 @@ the real host exactly once, when Gate 0 closes.
   "operatingSystem": "Any modern web browser with WebAssembly support",
   "browserRequirements": "Requires JavaScript and WebAssembly",
   "url": "https://prism.example.invalid/",
-  "description": "PRISM Analytics is a browser-based data analysis tool for CSV, Excel and XML files. All parsing, statistics and charting run locally in the browser using WebAssembly. Files are never uploaded to a server.",
+  "description": "PRISM Analytics is a browser-based data analysis tool for CSV and Excel files. All parsing, statistics and charting run locally in the browser using WebAssembly. Files are never uploaded to a server.",
   "featureList": [
-    "Reads CSV, XLSX and XML files entirely in the browser",
+    "Reads CSV and XLSX files entirely in the browser",
     "Descriptive statistics and automatic column type detection",
     "17 inferential statistical tests including t-tests, ANOVA, chi-square, Mann-Whitney and linear regression",
     "Charts rendered locally from local data",
@@ -559,7 +559,7 @@ option where the answer is both accurate and ours.
   contains the measurement protocol.
 - PRISM cannot protect you from a compromised machine, a malicious browser
   extension, or a hostile endpoint. It removes the upload, not every risk.
-- Input formats are limited to CSV, XLSX/XLS and XML.
+- Input formats are limited to CSV and XLSX/XLS.
 
 Publishing the second and third items costs us something real. It is still the
 right call, both ethically and tactically: an audit-minded buyer who finds the

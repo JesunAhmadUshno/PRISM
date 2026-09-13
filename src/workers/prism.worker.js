@@ -352,25 +352,59 @@ class PrismAnalytics:
         return insights
     
     def get_chart_data(self, chart_type, x_col, y_col=None, limit=100):
+        # Rows only, for callers that do not need the counts.
+        return self.get_chart_data_with_meta(chart_type, x_col, y_col, limit)["data"]
+
+    def get_chart_data_with_meta(self, chart_type, x_col, y_col=None, limit=100):
+        # head(limit) keeps the FIRST n rows or categories, it is not a sample.
+        # Every payload therefore carries what was actually plotted, what exists
+        # and an explicit truncated flag, so a chart of the first 15 of 400
+        # categories cannot be read as a chart of the data.
+        def payload(rows, plotted, total, unit="rows", note=None):
+            plotted = int(plotted)
+            total = int(total)
+            return {
+                "data": rows,
+                "plottedRowCount": plotted,
+                "totalRowCount": total,
+                "countUnit": unit,
+                "truncated": bool(plotted < total),
+                "truncationNote": (
+                    (note or f"Showing the first {plotted:,} of {total:,} {unit}, not a random sample.")
+                    if plotted < total else ""
+                )
+            }
+
         if self.df is None or x_col not in self.df.columns:
-            return []
+            return payload([], 0, 0)
         try:
             if chart_type == "histogram":
                 series = pd.to_numeric(self.df[x_col], errors='coerce').dropna()
                 hist, bins = np.histogram(series, bins=20)
-                return [{"bin": f"{bins[i]:.2f}-{bins[i+1]:.2f}", "count": int(hist[i])} for i in range(len(hist))]
+                rows = [{"bin": f"{bins[i]:.2f}-{bins[i+1]:.2f}", "count": int(hist[i])} for i in range(len(hist))]
+                binned = payload(rows, len(series), len(self.df))
+                if binned["truncated"]:
+                    binned["truncationNote"] = f"All {len(series):,} usable values are binned; {len(self.df) - len(series):,} missing or non-numeric row(s) excluded."
+                return binned
             elif chart_type in ["bar", "pie"]:
                 if y_col and y_col in self.df.columns:
                     grouped = self.df.groupby(x_col)[y_col].mean().reset_index()
                 else:
                     grouped = self.df[x_col].value_counts().reset_index()
                     grouped.columns = [x_col, 'count']
-                return _json_safe(grouped.head(limit).to_dict('records'))
+                shown = grouped.head(limit)
+                # value_counts is frequency-ordered and groupby is key-ordered, so
+                # head() means something different in each case. Say which.
+                note = None
+                if not (y_col and y_col in self.df.columns) and len(shown) < len(grouped):
+                    note = f"Showing the {len(shown):,} most frequent of {len(grouped):,} categories."
+                return payload(_json_safe(shown.to_dict('records')), len(shown), len(grouped), "categories", note)
             else:
                 cols = [x_col] + ([y_col] if y_col and y_col in self.df.columns else [])
-                return _json_safe(self.df[cols].head(limit).to_dict('records'))
+                shown = self.df[cols].head(limit)
+                return payload(_json_safe(shown.to_dict('records')), len(shown), len(self.df))
         except:
-            return []
+            return payload([], 0, 0)
     
     def analyze(self, data, file_type='csv'):
         import time
@@ -393,14 +427,19 @@ class PrismAnalytics:
             chart_data = []
             for rec in recommendations[:3]:
                 try:
-                    data = self.get_chart_data(rec['chartType'], rec.get('xAxis', ''), rec.get('yAxis'))
+                    chart = self.get_chart_data_with_meta(rec['chartType'], rec.get('xAxis', ''), rec.get('yAxis'))
+                    data = chart["data"]
                     if data:
                         chart_data.append({
                             "type": rec['chartType'],
                             "title": f"{rec['chartType'].title()} Chart",
                             "xAxisLabel": rec.get('xAxis', ''),
                             "yAxisLabel": rec.get('yAxis', 'Count'),
-                            "data": data
+                            "data": data,
+                            "plottedRowCount": chart["plottedRowCount"],
+                            "totalRowCount": chart["totalRowCount"],
+                            "truncated": chart["truncated"],
+                            "truncationNote": chart["truncationNote"]
                         })
                 except Exception:
                     continue
@@ -572,14 +611,27 @@ def run_statistical_test(data, test_id, columns, parameters=None):
             col_data = get_numeric(columns[0])
             if len(col_data) < 3:
                 return json.dumps({"success": False, "error": "Need at least 3 non-null values"})
-            if len(col_data) > 5000:
-                col_data = col_data.sample(5000)
+            # scipy's Shapiro-Wilk p-value is unreliable above ~5000 values, so the
+            # subsample stays. What it must not do is stay silent: a normality
+            # verdict computed on a random 5,000 of 80,000 values is not a verdict
+            # on the column, and the old result gave no way to tell which one it
+            # was. Report both counts, the way paired_t reports excluded pairs.
+            total_count = int(len(col_data))
+            if total_count > 5000:
+                # Fixed seed: the same file must give the same p-value on re-run.
+                col_data = col_data.sample(5000, random_state=0)
+            sampled_count = int(len(col_data))
             stat, p = scipy_stats.shapiro(col_data)
             result['statistic'] = to_python(stat)
             result['pValue'] = to_python(p)
+            result['sampledCount'] = sampled_count
+            result['totalCount'] = total_count
+            result['subsampled'] = bool(sampled_count < total_count)
             result['significant'] = bool(p < alpha)
             result['interpretation'] = f"Data {'does NOT appear' if p < alpha else 'appears'} normally distributed (p={p:.4f}). " + \
-                ("Reject null hypothesis of normality." if p < alpha else "Cannot reject null hypothesis of normality.")
+                ("Reject null hypothesis of normality. " if p < alpha else "Cannot reject null hypothesis of normality. ") + \
+                (f"Computed on a random sample of {sampled_count:,} of {total_count:,} values, not the whole column, because the Shapiro-Wilk p-value is unreliable above 5,000 values."
+                 if sampled_count < total_count else f"Based on all {total_count:,} non-null values.")
         
         # One-sample t-test
         elif test_id == 'one_sample_t':
@@ -612,9 +664,26 @@ def run_statistical_test(data, test_id, columns, parameters=None):
                 return json.dumps({"success": False, "error": "Independent t-test requires 1 numeric and 1 categorical column"})
             numeric_col = columns[0]
             group_col = columns[1]
-            groups = df[group_col].dropna().unique()[:2]
+            # The previous code took .unique()[:2], which keeps whichever two
+            # groups happen to appear first, silently discards every row of the
+            # others, and still reports a p-value as though all of them had been
+            # tested. Refuse instead: a test answering a different question than
+            # the one asked is worse than no test, because the user cannot tell.
+            groups = df[group_col].dropna().unique()
             if len(groups) < 2:
                 return json.dumps({"success": False, "error": "Need at least 2 groups for comparison"})
+            if len(groups) > 2:
+                names = [str(g) for g in groups]
+                return json.dumps({
+                    "success": False,
+                    "error": (
+                        f"An independent t-test compares exactly 2 groups, but '{group_col}' "
+                        f"has {len(names)} ({', '.join(names[:6])}"
+                        f"{'...' if len(names) > 6 else ''}). "
+                        f"Use one-way ANOVA to compare more than two groups, or filter the "
+                        f"data down to exactly two groups first."
+                    )
+                })
             group1 = get_numeric(numeric_col)[df[group_col] == groups[0]]
             group2 = get_numeric(numeric_col)[df[group_col] == groups[1]]
             stat, p = scipy_stats.ttest_ind(group1.dropna(), group2.dropna())
@@ -708,9 +777,24 @@ def run_statistical_test(data, test_id, columns, parameters=None):
                 return json.dumps({"success": False, "error": "Mann-Whitney requires 1 numeric and 1 categorical column"})
             numeric_col = columns[0]
             group_col = columns[1]
-            groups = df[group_col].dropna().unique()[:2]
+            # Same defect the independent t-test had: .unique()[:2] answered a
+            # two-group question on a column with any number of groups, and the
+            # p-value that came back gave the user no way to notice.
+            groups = df[group_col].dropna().unique()
             if len(groups) < 2:
                 return json.dumps({"success": False, "error": "Need at least 2 groups"})
+            if len(groups) > 2:
+                names = [str(g) for g in groups]
+                return json.dumps({
+                    "success": False,
+                    "error": (
+                        f"Mann-Whitney U compares exactly 2 groups, but '{group_col}' has "
+                        f"{len(names)} ({', '.join(names[:6])}"
+                        f"{'...' if len(names) > 6 else ''}). "
+                        f"Use the Kruskal-Wallis test to compare more than two groups, or "
+                        f"filter the data down to exactly two groups first."
+                    )
+                })
             group1 = get_numeric(numeric_col)[df[group_col] == groups[0]].dropna()
             group2 = get_numeric(numeric_col)[df[group_col] == groups[1]].dropna()
             stat, p = scipy_stats.mannwhitneyu(group1, group2, alternative='two-sided')
@@ -786,10 +870,40 @@ def run_statistical_test(data, test_id, columns, parameters=None):
                 return json.dumps({"success": False, "error": "Need at least 2 groups for each factor"})
             stat1, p1 = scipy_stats.f_oneway(*group_data1)
             stat2, p2 = scipy_stats.f_oneway(*group_data2)
+
+            # This is NOT a two-way ANOVA. It is two independent one-way ANOVAs:
+            # there is no interaction term and no pooled error term, so it cannot
+            # answer the question a two-way ANOVA answers. Saying so is the point.
+            #
+            # The previous code reported min(p1, p2) as "the" p-value and flagged
+            # significance on (p1 < alpha or p2 < alpha). Neither is valid: the
+            # minimum of two p-values is not a p-value for any hypothesis, and
+            # testing twice at alpha inflates the false-positive rate to roughly
+            # 2*alpha. Bonferroni over the two factors gives a family-wise value
+            # that is defensible, and the per-factor numbers are reported in full
+            # so a reader can judge each on its own.
+            adjusted = min(1.0, min(p1, p2) * 2)
+
             result['statistic'] = to_python(stat1)
-            result['pValue'] = to_python(min(p1, p2))
-            result['significant'] = bool(p1 < alpha or p2 < alpha)
-            result['interpretation'] = f"Two-way ANOVA: Factor '{factor1}' (F={stat1:.3f}, p={p1:.4f}) {'significant' if p1 < alpha else 'not significant'}. Factor '{factor2}' (F={stat2:.3f}, p={p2:.4f}) {'significant' if p2 < alpha else 'not significant'}."
+            result['pValue'] = to_python(adjusted)
+            result['significant'] = bool(adjusted < alpha)
+            result['pValueAdjustment'] = 'bonferroni-2'
+            result['factors'] = [
+                {"name": factor1, "statistic": to_python(stat1), "pValue": to_python(p1),
+                 "significant": bool(p1 < alpha), "groupCount": int(len(group_data1))},
+                {"name": factor2, "statistic": to_python(stat2), "pValue": to_python(p2),
+                 "significant": bool(p2 < alpha), "groupCount": int(len(group_data2))},
+            ]
+            result['interpretation'] = (
+                f"Two separate one-way ANOVAs, not a two-way ANOVA: no interaction "
+                f"between '{factor1}' and '{factor2}' is estimated. "
+                f"Factor '{factor1}': F={stat1:.3f}, p={p1:.4f} "
+                f"({'significant' if p1 < alpha else 'not significant'}). "
+                f"Factor '{factor2}': F={stat2:.3f}, p={p2:.4f} "
+                f"({'significant' if p2 < alpha else 'not significant'}). "
+                f"Family-wise p={adjusted:.4f} after Bonferroni correction for the "
+                f"two tests. Use a dedicated two-way ANOVA if the interaction matters."
+            )
         
         # Chi-square goodness-of-fit
         elif test_id == 'chi_square_gof':
@@ -1003,13 +1117,34 @@ def run_visualization(data, chart_type, columns):
             "title": "",
             "xAxisLabel": "",
             "yAxisLabel": "",
-            "data": []
+            "data": [],
+            "plottedRowCount": 0,
+            "totalRowCount": int(len(df)),
+            "countUnit": "rows",
+            "truncated": False,
+            "truncationNote": ""
         }
-        
+
         # Helper to convert values to JSON-serializable format
         # (_json_safe also maps NaN/Infinity to None - they are not valid JSON)
         def to_serializable(val):
             return _json_safe(val)
+
+        # The head(n) calls below keep the FIRST n rows or categories, they are
+        # not samples. Each branch records what it actually plotted against what
+        # exists, so the caller can say so instead of presenting a fraction of
+        # the data as the data.
+        def set_counts(plotted, total, unit="rows", note=None):
+            plotted = int(plotted)
+            total = int(total)
+            result['plottedRowCount'] = plotted
+            result['totalRowCount'] = total
+            result['countUnit'] = unit
+            result['truncated'] = bool(plotted < total)
+            if plotted < total:
+                result['truncationNote'] = note or f"Showing the first {plotted:,} of {total:,} {unit}, not a random sample."
+            else:
+                result['truncationNote'] = ""
         
         if chart_type == 'histogram':
             # Histogram: distribution of a single numeric column
@@ -1023,22 +1158,27 @@ def run_visualization(data, chart_type, columns):
                 {"bin": f"{bin_edges[i]:.2f}-{bin_edges[i+1]:.2f}", "count": int(hist[i])}
                 for i in range(len(hist))
             ]
+            set_counts(len(numeric_data), len(df), note=f"All {len(numeric_data):,} usable values are binned; {len(df) - len(numeric_data):,} missing or non-numeric row(s) excluded.")
         
         elif chart_type == 'pie':
             # Pie chart: category frequencies
             col = columns[0]
-            value_counts = df[col].value_counts().head(10)
+            all_counts = df[col].value_counts()
+            value_counts = all_counts.head(10)
             result['title'] = f"Distribution of {col}"
             result['data'] = [
                 {"name": str(name), "value": int(count)}
                 for name, count in value_counts.items()
             ]
+            set_counts(len(value_counts), len(all_counts), "categories",
+                       note=f"Showing the {len(value_counts):,} most frequent of {len(all_counts):,} categories.")
         
         elif chart_type == 'bar':
             if len(columns) == 1:
                 # Single column: show value counts
                 col = columns[0]
-                value_counts = df[col].value_counts().head(15)
+                all_counts = df[col].value_counts()
+                value_counts = all_counts.head(15)
                 result['title'] = f"Count by {col}"
                 result['xAxisLabel'] = col
                 result['yAxisLabel'] = "Count"
@@ -1046,11 +1186,14 @@ def run_visualization(data, chart_type, columns):
                     {"category": str(name), "value": int(count)}
                     for name, count in value_counts.items()
                 ]
+                set_counts(len(value_counts), len(all_counts), "categories",
+                           note=f"Showing the {len(value_counts):,} most frequent of {len(all_counts):,} categories.")
             else:
                 # Two columns: aggregate numeric by category
                 cat_col = columns[0] if df[columns[0]].dtype == 'object' else columns[1]
                 num_col = columns[1] if df[columns[0]].dtype == 'object' else columns[0]
-                agg_data = df.groupby(cat_col)[num_col].mean().head(15)
+                all_groups = df.groupby(cat_col)[num_col].mean()
+                agg_data = all_groups.head(15)
                 result['title'] = f"Average {num_col} by {cat_col}"
                 result['xAxisLabel'] = cat_col
                 result['yAxisLabel'] = f"Avg {num_col}"
@@ -1058,6 +1201,7 @@ def run_visualization(data, chart_type, columns):
                     {"category": str(cat), "value": to_serializable(val)}
                     for cat, val in agg_data.items()
                 ]
+                set_counts(len(agg_data), len(all_groups), "categories")
         
         elif chart_type == 'line':
             if len(columns) >= 2:
@@ -1070,15 +1214,18 @@ def run_visualization(data, chart_type, columns):
                     {"x": to_serializable(row[x_col]), "y": to_serializable(row[y_col])}
                     for _, row in sample.iterrows()
                 ]
+                set_counts(len(sample), len(df))
             else:
                 col = columns[0]
+                sample = df[col].head(100)
                 result['title'] = f"{col} Trend"
                 result['xAxisLabel'] = "Index"
                 result['yAxisLabel'] = col
                 result['data'] = [
                     {"x": i, "y": to_serializable(val)}
-                    for i, val in enumerate(df[col].head(100))
+                    for i, val in enumerate(sample)
                 ]
+                set_counts(len(sample), len(df))
         
         elif chart_type == 'scatter':
             if len(columns) < 2:
@@ -1092,6 +1239,7 @@ def run_visualization(data, chart_type, columns):
                 {"x": to_serializable(row[x_col]), "y": to_serializable(row[y_col])}
                 for _, row in sample.iterrows()
             ]
+            set_counts(len(sample), len(df))
         
         elif chart_type == 'area':
             if len(columns) >= 2:
@@ -1104,15 +1252,18 @@ def run_visualization(data, chart_type, columns):
                     {"x": to_serializable(row[x_col]), "y": to_serializable(row[y_col])}
                     for _, row in sample.iterrows()
                 ]
+                set_counts(len(sample), len(df))
             else:
                 col = columns[0]
+                sample = df[col].head(100)
                 result['title'] = f"{col} Area"
                 result['xAxisLabel'] = "Index"
                 result['yAxisLabel'] = col
                 result['data'] = [
                     {"x": i, "y": to_serializable(val)}
-                    for i, val in enumerate(df[col].head(100))
+                    for i, val in enumerate(sample)
                 ]
+                set_counts(len(sample), len(df))
         
         elif chart_type == 'box':
             # Box plot data
@@ -1130,6 +1281,7 @@ def run_visualization(data, chart_type, columns):
                 "max": to_serializable(numeric_data.max()),
                 "mean": to_serializable(numeric_data.mean())
             }]
+            set_counts(len(numeric_data), len(df), note=f"Summary covers the {len(numeric_data):,} usable values; {len(df) - len(numeric_data):,} missing or non-numeric row(s) excluded.")
         
         elif chart_type == 'heatmap':
             # Correlation heatmap
@@ -1143,6 +1295,7 @@ def run_visualization(data, chart_type, columns):
                 for col1 in corr_matrix.columns
                 for col2 in corr_matrix.columns
             ]
+            set_counts(len(numeric_df), len(df))
         
         else:
             return json.dumps({"success": False, "error": f"Unsupported chart type: {chart_type}"})
@@ -1656,6 +1809,16 @@ run_custom_analysis(config, analysis_data)
       payload.xAxisLabel = result.xAxisLabel;
       payload.yAxisLabel = result.yAxisLabel;
       payload.data = result.data;
+      // The Python layer computes these so a user can see they are looking at
+      // the first 15 of 400 categories rather than all of them. Dropping them
+      // here silently undid that: the chart still truncated, and the notice
+      // never reached the UI. The whole point of the field is that it survives
+      // the trip to the renderer.
+      payload.plottedRowCount = result.plottedRowCount;
+      payload.totalRowCount = result.totalRowCount;
+      payload.countUnit = result.countUnit;
+      payload.truncated = result.truncated;
+      payload.truncationNote = result.truncationNote;
     }
 
     // Send custom analysis result

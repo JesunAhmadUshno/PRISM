@@ -12,12 +12,12 @@
 #   - test      : PASSES - 98 unit tests (vitest.config.ts) + 12 accessibility tests
 #                 (vitest.a11y.config.ts). The a11y suite is a SEPARATE config and is
 #                 excluded from the default one, so it needs its own step below.
-#   - build     : PASSES (vendor-charts chunk is over the 500 kB warn limit, warn only)
+#   - build     : PASSES (largest chunk vendor-charts at ~441 kB, under the 500 kB limit)
 #
-# Nothing here is allowed to acquire `--passWithNoTests` or `continue-on-error` in the
-# quality job. The repository claims WCAG 2.2 AAA and ISO/IEC 27001:2022 in its README;
-# the a11y and security suites are the only things standing behind either claim.
-# Fix the repo, not the gate.
+# Nothing here is allowed to acquire `--passWithNoTests` or `continue-on-error`.
+# The README no longer asserts WCAG 2.2 AAA or ISO/IEC 27001 conformance, because
+# neither was ever verified. What it claims now is narrower and checkable, and
+# these suites are what make it checkable. Fix the repo, not the gate.
 
 name: CI
 
@@ -99,7 +99,7 @@ jobs:
           if-no-files-found: ignore
 
   audit:
-    name: Dependency audit (advisory)
+    name: Dependency audit
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -116,19 +116,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # ADVISORY ONLY - this step reports but does not fail the run.
+      # HARD GATE. This step fails the run.
       #
-      # Why: `npm audit --audit-level=high` already fails today on a high-severity
-      # brace-expansion ReDoS reachable only through transitive dev tooling, and
-      # xlsx@0.18.5 is the deprecated SheetJS npm build with known CVEs and no fix
-      # available on that registry. Neither is resolvable by this workflow, and
-      # both would block every unrelated pull request from day one.
+      # It was advisory-only while two advisories existed that no pull request
+      # author could resolve: a transitive brace-expansion ReDoS, and xlsx@0.18.5,
+      # the deprecated SheetJS npm build whose advisories npm reports as
+      # fixAvailable:false because the registry copy is frozen at the vulnerable
+      # version. A gate that is red for reasons an author cannot fix gets muted,
+      # and then it gates nothing.
       #
-      # A gate that is red for reasons the author of a PR cannot fix gets muted,
-      # and then it gates nothing. So this job stays visible and non-blocking until
-      # the dependency work lands (xlsx migrated off the npm build, transitives
-      # deduped), at which point DELETE the `continue-on-error` line below and this
-      # becomes a hard gate. That removal is the acceptance criterion for that work.
+      # Both are now resolved. xlsx is removed from the tree entirely, replaced by
+      # SheetJS 0.20.3 vendored in public/vendor/ and loaded with an SHA-384
+      # integrity hash. The transitive advisories cleared with `npm audit fix`,
+      # which required major bumps of vite and vitest. `npm audit` reports zero
+      # vulnerabilities at any severity, so the acceptance criterion named in the
+      # previous version of this comment is met and continue-on-error is gone.
+      #
+      # If this turns red, a dependency picked up an advisory. Fix the dependency.
+      # Do not re-add continue-on-error.
       - name: npm audit
-        continue-on-error: true
         run: npm audit --audit-level=high

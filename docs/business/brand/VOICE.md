@@ -345,13 +345,13 @@ be. The README belongs to another team; these are the rewrites, not the edits.
 ### 9.1 The subtitle
 
 > **Current:** "PRISM is a zero-trust data analytics platform that processes sensitive data
-> (Excel, CSV, XML) entirely within your browser. It generates AI-driven visual insights
+> (Excel, CSV) entirely within your browser. It generates AI-driven visual insights
 > while guaranteeing complete data sovereignty[em dash]**no bytes ever leave your machine**."
 
 Four violations in two sentences: "zero trust" misused, "AI-driven" unsupported,
 "guaranteeing" an absolute, and an em dash.
 
-> **Rewrite:** "PRISM analyses Excel, CSV and XML files entirely inside your browser tab.
+> **Rewrite:** "PRISM analyses Excel and CSV files entirely inside your browser tab.
 > Parsing runs in JavaScript, statistics run in Python through WebAssembly, and there is no
 > server. The only outbound requests the page makes are for the Python runtime itself, from a
 > public CDN, and your file is never part of them. You can confirm that in your network
