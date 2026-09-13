@@ -810,11 +810,26 @@ def run_statistical_test(data, test_id, columns, parameters=None):
             if len(columns) < 2:
                 return json.dumps({"success": False, "error": "Fisher's exact test requires 2 categorical columns"})
             contingency = pd.crosstab(df[columns[0]], df[columns[1]])
+            # The previous code reduced a larger table with .iloc[:2, :2], which
+            # keeps the two ALPHABETICALLY FIRST categories per axis and silently
+            # discards every other row of the dataset, then reports a p-value as
+            # though the whole dataset had been analysed. Refuse instead: a test
+            # answering a different question than the one asked is worse than no
+            # test, because the user cannot tell.
             if contingency.shape != (2, 2):
-                # Reduce to 2x2 by taking top 2 categories from each
-                contingency = contingency.iloc[:2, :2]
-            if contingency.shape != (2, 2):
-                return json.dumps({"success": False, "error": "Fisher's exact test requires a 2x2 contingency table (2 categories each)"})
+                rows = [str(v) for v in contingency.index.tolist()]
+                cols = [str(v) for v in contingency.columns.tolist()]
+                return json.dumps({
+                    "success": False,
+                    "error": (
+                        f"Fisher's exact test needs a 2x2 table, but '{columns[0]}' has "
+                        f"{len(rows)} categories ({', '.join(rows[:6])}"
+                        f"{'...' if len(rows) > 6 else ''}) and '{columns[1]}' has "
+                        f"{len(cols)} ({', '.join(cols[:6])}{'...' if len(cols) > 6 else ''}). "
+                        f"Use a chi-square test of independence for tables larger than 2x2, "
+                        f"or filter the data to exactly two categories per column first."
+                    )
+                })
             odds_ratio, p = scipy_stats.fisher_exact(contingency)
             result['statistic'] = to_python(odds_ratio)
             result['pValue'] = to_python(p)
