@@ -421,6 +421,30 @@ export const App: React.FC = () => {
               </div>
             </div>
 
+            {/*
+              Non-fatal notices about how the file was read, for example that a
+              workbook had several worksheets and only the first was analysed.
+              These must be visible next to the results, not buried: the whole
+              point is that the analysis is correct but covers less than the
+              user believes. role="status" announces them without interrupting.
+            */}
+            {file.notices.length > 0 && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950"
+              >
+                <h4 className="font-semibold text-amber-900 dark:text-amber-100">
+                  About this analysis
+                </h4>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900 dark:text-amber-100">
+                  {file.notices.map((notice) => (
+                    <li key={notice}>{notice}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* View Mode Tabs */}
             <div className="flex justify-center">
               <div className="inline-flex items-center p-1 rounded-2xl glass-card" role="tablist" aria-label="Results view mode">

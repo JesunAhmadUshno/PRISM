@@ -57,11 +57,23 @@ export default defineConfig({
 
     rollupOptions: {
       output: {
-        // Chunk splitting for optimal caching
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-charts': ['recharts'],
-          'vendor-utils': ['zustand', 'dompurify', 'papaparse'],
+        // Chunk splitting for optimal caching.
+        //
+        // Must be a FUNCTION, not the object form: Vite 8 bundles with rolldown
+        // rather than rollup, and rolldown rejects the object with
+        // "manualChunks is not a function".
+        //
+        // Matching on the resolved module id also fixes what the object form got
+        // wrong. The automatic JSX transform means components import
+        // react/jsx-runtime rather than react, so an entry listing only 'react'
+        // and 'react-dom' matched almost nothing and emitted a 37-byte chunk
+        // while React itself stayed in the entry bundle.
+        manualChunks(id: string) {
+          if (!id.includes('node_modules')) return undefined;
+          if (/[\\/]node_modules[\\/]react(-dom)?[\\/]/.test(id)) return 'vendor-react';
+          if (/[\\/]node_modules[\\/]recharts[\\/]/.test(id)) return 'vendor-charts';
+          if (/[\\/]node_modules[\\/](zustand|dompurify)[\\/]/.test(id)) return 'vendor-utils';
+          return undefined;
         },
         
         // Asset naming for cache busting

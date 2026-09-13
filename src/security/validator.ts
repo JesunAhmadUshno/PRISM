@@ -14,8 +14,18 @@ import type { FileMetadata, FileValidationResult, SupportedFileType } from '@/ty
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Maximum file size: 50MB
- * Prevents memory exhaustion attacks
+ * Maximum accepted upload size: 500MB.
+ *
+ * This docstring used to say 50MB while the constant said 500MB, a tenfold
+ * disagreement inside the only size control the product has. The constant is
+ * what runs, so the comment is corrected rather than the value: changing an
+ * accepted limit is a product decision, not a documentation fix.
+ *
+ * OPEN: 500MB is not a measured capability. Nobody has established the size at
+ * which a browser tab actually degrades, and PRISM holds the parsed data in
+ * memory several times over (see docs/business/technical/SCALING_LIMITS.md).
+ * The real ceiling is likely far below this. Benchmark, then set this to a
+ * number that means something.
  */
 export const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB in bytes
 
@@ -34,9 +44,24 @@ export const SUPPORTED_TYPES: Record<string, SupportedFileType> = {
   'text/plain': 'csv', // Often CSV files are detected as plain text
   'application/vnd.ms-excel': 'xlsx',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
-  'text/xml': 'xml',
-  'application/xml': 'xml',
 };
+
+/**
+ * Extensions this build can actually parse.
+ *
+ * XML was previously listed here, but no XML parser exists anywhere in the
+ * codebase: the worker handed the raw markup to pandas.read_csv, which produced
+ * silently wrong results. XML is rejected at validation until a real parser
+ * ships. See UNSUPPORTED_XML_ERROR below.
+ */
+export const SUPPORTED_EXTENSIONS = ['csv', 'xlsx', 'xls'] as const;
+
+/**
+ * Rejection message for .xml uploads.
+ * Tells the user exactly what to do instead of failing vaguely.
+ */
+export const UNSUPPORTED_XML_ERROR =
+  'XML files are not supported. Please convert the file to CSV or Excel (.xlsx) and upload it again.';
 
 /**
  * Magic bytes (file signatures) for supported formats
@@ -47,11 +72,6 @@ export const MAGIC_BYTES: Record<string, Uint8Array[]> = {
     new Uint8Array([0x50, 0x4B, 0x03, 0x04]), // PK.. (ZIP format)
     new Uint8Array([0x50, 0x4B, 0x05, 0x06]), // Empty ZIP
     new Uint8Array([0x50, 0x4B, 0x07, 0x08]), // Spanned ZIP
-  ],
-  xml: [
-    new Uint8Array([0x3C, 0x3F, 0x78, 0x6D, 0x6C]), // <?xml
-    new Uint8Array([0xEF, 0xBB, 0xBF, 0x3C, 0x3F]), // UTF-8 BOM + <?
-    new Uint8Array([0x3C, 0x21]), // <!DOCTYPE or comment
   ],
 };
 
@@ -104,7 +124,7 @@ export async function validateFile(file: File): Promise<FileValidationResult> {
 
   // Check 5: Content security scan (for text formats)
   const fileType = getFileType(file.name);
-  if (fileType === 'csv' || fileType === 'xml') {
+  if (fileType === 'csv') {
     const contentResult = await validateContentSecurity(file);
     if (!contentResult.isValid) {
       return contentResult;
@@ -154,12 +174,18 @@ export function validateFileSize(size: number): FileValidationResult {
  */
 export function validateFileExtension(fileName: string): FileValidationResult {
   const extension = getFileExtension(fileName);
-  const supportedExtensions = ['csv', 'xlsx', 'xls', 'xml'];
 
-  if (!supportedExtensions.includes(extension)) {
+  if (extension === 'xml') {
     return {
       isValid: false,
-      error: `Unsupported file type ".${extension}". Supported types: CSV, XLSX, XML.`,
+      error: UNSUPPORTED_XML_ERROR,
+    };
+  }
+
+  if (!SUPPORTED_EXTENSIONS.includes(extension as (typeof SUPPORTED_EXTENSIONS)[number])) {
+    return {
+      isValid: false,
+      error: `Unsupported file type ".${extension}". Supported types: CSV, XLSX, XLS.`,
     };
   }
 
@@ -180,15 +206,21 @@ export function validateMimeType(
 
   // Fall back to extension-based validation
   const extension = getFileExtension(fileName);
-  const validExtensions = ['csv', 'xlsx', 'xls', 'xml'];
 
-  if (validExtensions.includes(extension)) {
+  if (extension === 'xml') {
+    return {
+      isValid: false,
+      error: UNSUPPORTED_XML_ERROR,
+    };
+  }
+
+  if (SUPPORTED_EXTENSIONS.includes(extension as (typeof SUPPORTED_EXTENSIONS)[number])) {
     return { isValid: true };
   }
 
   return {
     isValid: false,
-    error: `Invalid file type. Please upload a CSV, Excel, or XML file.`,
+    error: `Invalid file type. Please upload a CSV or Excel file.`,
   };
 }
 
@@ -222,23 +254,6 @@ export async function validateMagicBytes(file: File): Promise<FileValidationResu
       return {
         isValid: false,
         error: 'File header does not match Excel format. File may be corrupted or mislabeled.',
-      };
-    }
-  }
-
-  // Check XML magic bytes
-  if (fileType === 'xml') {
-    const xmlMagic = MAGIC_BYTES['xml'];
-    const isValid = xmlMagic?.some((magic) => matchesMagicBytes(header, magic));
-    
-    // XML can also start with whitespace, so also check for '<'
-    const startsWithBracket = header[0] === 0x3C || // <
-      (header[0] === 0xEF && header[1] === 0xBB && header[2] === 0xBF && header[3] === 0x3C); // BOM + <
-    
-    if (!isValid && !startsWithBracket) {
-      return {
-        isValid: false,
-        error: 'File does not appear to be valid XML.',
       };
     }
   }
@@ -297,8 +312,6 @@ function getFileType(fileName: string): SupportedFileType | null {
     case 'xlsx':
     case 'xls':
       return 'xlsx';
-    case 'xml':
-      return 'xml';
     default:
       return null;
   }
@@ -370,6 +383,8 @@ export const Validator = {
   MAX_FILE_SIZE,
   MIN_FILE_SIZE,
   SUPPORTED_TYPES,
+  SUPPORTED_EXTENSIONS,
+  UNSUPPORTED_XML_ERROR,
 };
 
 export default Validator;

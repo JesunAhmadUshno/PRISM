@@ -44,3 +44,14 @@ coverage/
 
 # Pyodide cache (if any)
 .pyodide/
+
+# Python test tooling. The statistical engine is Python embedded in a JS
+# template literal, so it is tested with pytest (tests/python/) rather than
+# vitest. Running that suite creates these.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
