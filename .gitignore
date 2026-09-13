@@ -55,3 +55,6 @@ __pycache__/
 htmlcov/
 .venv/
 venv/
+
+# Pages assembly output (marketing site + app), built by deploy.yml
+_site/

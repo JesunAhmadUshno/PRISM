@@ -1,4 +1,18 @@
-# Deploy PRISM to GitHub Pages
+# Deploy PRISM to GitHub Pages.
+#
+# The site is assembled from two independent pieces:
+#
+#   web/    a hand written marketing site, no build step, no dependencies.
+#           It goes to the ROOT, so https://<user>.github.io/PRISM/
+#
+#   dist/   the Vite application build.
+#           It goes to /app/, so https://<user>.github.io/PRISM/app/
+#
+# vite.config.ts sets base to '/PRISM/app/' to match. Anything that builds a
+# runtime URL inside the app reads import.meta.env.BASE_URL rather than
+# hardcoding a path, including the vendored SheetJS loader, so the two stay
+# in step as long as those two values agree.
+
 name: Deploy to GitHub Pages
 
 on:
@@ -31,8 +45,47 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      # A failing test must not reach the public URL. ci.yml runs the full gate
+      # on the same push, but it is a separate workflow and cannot block this
+      # one, so the tests that matter run here too. `npm run build` already
+      # fails on a type error, since the script is `tsc && vite build`.
+      - name: Test before shipping
+        run: npx vitest run
+
+      - name: Accessibility tests
+        run: npx vitest run --config vitest.a11y.config.ts
+
+      - name: Build the application
         run: npm run build
+
+      # Marketing site at the root, application underneath it at /app/.
+      - name: Assemble the site
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site/app
+          cp -R web/. _site/
+          cp -R dist/. _site/app/
+          # Pages runs Jekyll by default, which silently drops files and
+          # directories beginning with an underscore. Vite does not emit any
+          # today, but a future plugin might, and the failure would be a
+          # missing asset in production with a green build.
+          touch _site/.nojekyll
+          echo "--- assembled ---"
+          ls -la _site
+          echo "--- app ---"
+          ls -la _site/app | head -12
+
+      # Fail loudly here rather than shipping a site whose links 404.
+      - name: Verify the assembly
+        run: |
+          set -euo pipefail
+          test -f _site/index.html          || { echo "marketing index missing"; exit 1; }
+          test -f _site/styles.css          || { echo "marketing styles missing"; exit 1; }
+          test -f _site/app/index.html      || { echo "app index missing"; exit 1; }
+          test -d _site/app/vendor          || { echo "vendored SheetJS missing"; exit 1; }
+          grep -q '/PRISM/app/' _site/app/index.html || { echo "app was not built with base /PRISM/app/"; exit 1; }
+          echo "assembly verified"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -40,7 +93,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist'
+          path: './_site'
 
   deploy:
     environment:

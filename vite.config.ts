@@ -33,7 +33,11 @@ export default defineConfig({
   },
 
   // GitHub Pages deployment base (repo name)
-  base: '/PRISM/',
+  // The marketing site now occupies the repository root on Pages, so the
+  // application is served one level down at /PRISM/app/. Everything that builds
+  // a runtime URL reads import.meta.env.BASE_URL rather than hardcoding this,
+  // including the vendored SheetJS loader, so moving the app is a one line change.
+  base: '/PRISM/app/',
 
   build: {
     // Target modern browsers for smaller bundles
