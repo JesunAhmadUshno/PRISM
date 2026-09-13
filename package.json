@@ -23,7 +23,6 @@
     "react-dropzone": "^14.2.3",
     "recharts": "^2.12.7",
     "sonner": "^1.4.41",
-    "xlsx": "^0.18.5",
     "zustand": "^4.5.2"
   },
   "devDependencies": {
@@ -62,8 +61,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/organization/prism.git"
+    "url": "git+https://github.com/JesunAhmadUshno/PRISM.git"
   },
-  "license": "PROPRIETARY",
+  "bugs": {
+    "url": "https://github.com/JesunAhmadUshno/PRISM/issues"
+  },
+  "homepage": "https://github.com/JesunAhmadUshno/PRISM#readme",
+  "license": "MIT",
   "private": true
 }

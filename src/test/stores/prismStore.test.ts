@@ -248,6 +248,7 @@ describe('clearFile', () => {
         content: 'a,b\n1,2\n',
         validationStatus: 'valid',
         validationError: null,
+        notices: [],
       },
     });
 
