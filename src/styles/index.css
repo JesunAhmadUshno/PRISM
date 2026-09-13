@@ -13,24 +13,61 @@
    CSS CUSTOM PROPERTIES
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/**
+ * REFRACTION tokens, matching web/styles.css so the application and the
+ * marketing site read as one product.
+ *
+ * What was here before was the 2021 purple-to-pink glassmorphism kit: a
+ * 135deg #667eea gradient, a five-stop candy mesh, and heavy frosted panels.
+ * It was competent and it was indistinguishable from a thousand other
+ * dashboards, which is the actual problem with it.
+ *
+ * The spectrum replaces it. A prism reveals the colours already inside the
+ * light without consuming it, which is precisely what this product does with
+ * a dataset, so the accent runs in wavelength order wherever something is
+ * being separated into parts. It is a reason, not a palette.
+ */
 :root {
-  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  --gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-  --gradient-mesh: radial-gradient(at 40% 20%, hsla(221,83%,67%,0.3) 0px, transparent 50%),
-                   radial-gradient(at 80% 0%, hsla(189,100%,56%,0.2) 0px, transparent 50%),
-                   radial-gradient(at 0% 50%, hsla(355,100%,80%,0.15) 0px, transparent 50%),
-                   radial-gradient(at 80% 50%, hsla(340,100%,76%,0.15) 0px, transparent 50%),
-                   radial-gradient(at 0% 100%, hsla(269,100%,77%,0.2) 0px, transparent 50%);
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.4);
-  --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+  /* The spectrum, in wavelength order. */
+  --sp-1: #a78bfa;  /* violet */
+  --sp-2: #60a5fa;  /* blue   */
+  --sp-3: #22d3ee;  /* cyan   */
+  --sp-4: #34d399;  /* green  */
+  --sp-5: #fbbf24;  /* amber  */
+  --sp-6: #fb7185;  /* rose   */
+
+  /* One beam, split. Used on the primary action, progress, and card edges. */
+  --beam: linear-gradient(90deg,
+            var(--sp-1), var(--sp-2), var(--sp-3),
+            var(--sp-4), var(--sp-5), var(--sp-6));
+
+  --gradient-primary: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+  --gradient-secondary: linear-gradient(135deg, var(--sp-2) 0%, var(--sp-1) 100%);
+  --gradient-success: linear-gradient(135deg, #059669 0%, var(--sp-4) 100%);
+
+  /* Ambient light rather than a candy mesh: two soft washes, nothing more. */
+  --gradient-mesh:
+    radial-gradient(46vw 40vh at 18% 8%,  rgba(167, 139, 250, 0.12), transparent 65%),
+    radial-gradient(42vw 38vh at 82% 2%,  rgba(34, 211, 238, 0.10),  transparent 62%),
+    radial-gradient(60vw 32vh at 50% 34%, rgba(52, 211, 153, 0.06),  transparent 70%);
+
+  /* Panels are glass, not frosting. Less blur, more edge definition. */
+  --glass-bg: rgba(255, 255, 255, 0.78);
+  /* Refraction slate-900 (#0d1020), not Tailwind's stock slate-900. */
+  --glass-border: rgba(13, 16, 32, 0.10);
+  --glass-shadow: 0 1px 2px rgba(16, 20, 40, 0.06), 0 24px 56px -28px rgba(16, 20, 40, 0.28);
+
+  /* Film grain, inline so it costs no request. It is what stops the large flat
+     areas of a dashboard banding on wide gamut displays. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.42'/%3E%3C/svg%3E");
+  --grain-opacity: 0.10;
 }
 
 .dark {
-  --glass-bg: rgba(15, 23, 42, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --glass-bg: rgba(13, 16, 32, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --glass-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 28px 60px -28px rgba(0, 0, 0, 0.85);
+  --grain-opacity: 0.26;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -163,27 +200,57 @@
 
   /* Solid card component */
   .card {
-    @apply bg-white dark:bg-slate-800 rounded-2xl shadow-xl;
+    @apply relative overflow-hidden bg-white dark:bg-slate-800 rounded-2xl;
     @apply border border-slate-200 dark:border-slate-700;
+    box-shadow: var(--glass-shadow);
+    transition: border-color 0.3s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   }
+
+  /* A hairline of split light along the top edge, revealed on hover. The same
+     gesture as .col on the marketing site, so the two surfaces rhyme. */
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 2px;
+    background: var(--beam);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  .card:hover::before { opacity: 1; }
 
   /* Gradient background */
   .gradient-bg {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #f4f5fa 100%);
   }
 
   .dark .gradient-bg {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    background: linear-gradient(180deg, #0d1020 0%, #05060d 100%);
   }
 
-  /* Mesh gradient background */
+  /* Ambient background. Carries the grain, so any surface using it gets the
+     texture that stops large flat panels banding. */
   .mesh-bg {
-    background-color: #f8fafc;
+    position: relative;
+    background-color: #fbfbfd;
     background-image: var(--gradient-mesh);
+    isolation: isolate;
   }
 
   .dark .mesh-bg {
-    background-color: #0f172a;
+    background-color: #05060d;
+  }
+
+  .mesh-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: var(--grain-opacity);
+    mix-blend-mode: overlay;
+    background-image: var(--grain);
   }
 
   /* Button variants */
@@ -196,11 +263,37 @@
     @apply active:scale-95;
   }
 
+  /**
+   * The primary action carries the spectrum on its underside, as if the button
+   * itself were refracting. It is the one element every user looks at, and it
+   * is the same gesture as the marketing site's primary button, which is how
+   * the two surfaces read as one product.
+   */
   .btn-primary {
-    @apply btn;
+    @apply btn relative overflow-hidden;
     background: var(--gradient-primary);
-    @apply text-white shadow-lg shadow-purple-500/25;
-    @apply hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-0.5;
+    @apply text-white;
+    box-shadow: 0 1px 2px rgba(8, 145, 178, 0.28), 0 12px 28px -12px rgba(8, 145, 178, 0.45);
+    @apply hover:-translate-y-0.5;
+  }
+
+  .btn-primary::after {
+    content: "";
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    bottom: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--beam);
+    opacity: 0;
+    transition: opacity 0.3s ease, left 0.3s ease, right 0.3s ease;
+  }
+
+  .btn-primary:hover::after {
+    opacity: 1;
+    left: 4%;
+    right: 4%;
   }
 
   .btn-secondary {
@@ -273,7 +366,14 @@
   }
 
   .stat-value {
-    @apply text-3xl font-bold bg-gradient-to-r from-prism-600 to-purple-600 bg-clip-text text-transparent;
+    @apply text-3xl font-bold bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #0e7490, #0891b2 55%, #22d3ee);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+  }
+
+  .dark .stat-value {
+    background-image: linear-gradient(135deg, #a5f3fc, #22d3ee 55%, #34d399);
   }
 
   .stat-label {
@@ -287,14 +387,15 @@
 
   .progress-fill {
     @apply h-full rounded-full transition-all duration-500 ease-out;
-    background: var(--gradient-primary);
+    background: var(--beam);
+    background-size: 200% 100%;
   }
 
   /* Animated gradient border */
   .gradient-border {
     position: relative;
     background: linear-gradient(var(--glass-bg), var(--glass-bg)) padding-box,
-                linear-gradient(135deg, #667eea, #764ba2, #f093fb, #f5576c) border-box;
+                var(--beam) border-box;
     border: 2px solid transparent;
     border-radius: 1rem;
   }
@@ -314,9 +415,11 @@
     animation: pulse-glow 2s ease-in-out infinite;
   }
 
+  /* Cyan, not the old indigo. This was the last surviving colour from the
+     purple-to-pink kit, and it glowed the wrong hue on every panel using it. */
   @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.3); }
-    50% { box-shadow: 0 0 40px rgba(102, 126, 234, 0.6); }
+    0%, 100% { box-shadow: 0 0 20px rgba(34, 211, 238, 0.28); }
+    50%      { box-shadow: 0 0 40px rgba(34, 211, 238, 0.55); }
   }
 
   /* Shimmer loading */
@@ -411,9 +514,11 @@
     @apply bg-prism-400 dark:bg-prism-500;
   }
 
-  /* Gradient text */
+  /* Split-light text. The last of the old purple-to-pink kit, replaced with
+     the spectrum so headings match the wordmark on the marketing site. */
   .gradient-text {
-    @apply bg-gradient-to-r from-prism-600 via-purple-600 to-pink-600 bg-clip-text text-transparent;
+    @apply bg-clip-text text-transparent;
+    background-image: var(--beam);
   }
 
   /* Text balance */
