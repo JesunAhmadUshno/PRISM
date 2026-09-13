@@ -586,11 +586,23 @@ def run_statistical_test(data, test_id, columns, parameters=None):
             if len(columns) < 1:
                 return json.dumps({"success": False, "error": "One-sample t-test requires 1 numeric column"})
             col_data = get_numeric(columns[0])
-            pop_mean = parameters.get('population_mean', 0) if parameters else col_data.mean()
+            if len(col_data) < 2:
+                return json.dumps({"success": False, "error": "One-sample t-test requires at least 2 non-null values"})
+            # A one-sample test compares the sample against an EXTERNAL reference.
+            # The previous default fell back to col_data.mean() whenever no
+            # parameters were passed, testing the sample against itself: t=0,
+            # p=1.0 by construction, reported as "not significantly different"
+            # every single time. parameters defaults to None in this function's
+            # signature, so that was the default path, not an edge case.
+            raw_mean = (parameters or {}).get('population_mean', 0)
+            pop_mean = 0.0 if raw_mean is None else float(raw_mean)
+            if float(col_data.std(ddof=1)) == 0.0:
+                return json.dumps({"success": False, "error": f"Column '{columns[0]}' has zero variance; a t-test is undefined"})
             stat, p = scipy_stats.ttest_1samp(col_data, pop_mean)
             result['statistic'] = to_python(stat)
             result['pValue'] = to_python(p)
             result['degreesOfFreedom'] = int(len(col_data) - 1)
+            result['populationMean'] = pop_mean
             result['significant'] = bool(p < alpha)
             result['interpretation'] = f"Sample mean ({col_data.mean():.2f}) is {'significantly different from' if p < alpha else 'not significantly different from'} {pop_mean} (t={stat:.3f}, p={p:.4f})."
         
