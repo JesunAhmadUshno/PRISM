@@ -14,8 +14,18 @@ import type { FileMetadata, FileValidationResult, SupportedFileType } from '@/ty
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Maximum file size: 50MB
- * Prevents memory exhaustion attacks
+ * Maximum accepted upload size: 500MB.
+ *
+ * This docstring used to say 50MB while the constant said 500MB, a tenfold
+ * disagreement inside the only size control the product has. The constant is
+ * what runs, so the comment is corrected rather than the value: changing an
+ * accepted limit is a product decision, not a documentation fix.
+ *
+ * OPEN: 500MB is not a measured capability. Nobody has established the size at
+ * which a browser tab actually degrades, and PRISM holds the parsed data in
+ * memory several times over (see docs/business/technical/SCALING_LIMITS.md).
+ * The real ceiling is likely far below this. Benchmark, then set this to a
+ * number that means something.
  */
 export const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB in bytes
 
