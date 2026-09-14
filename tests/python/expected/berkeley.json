@@ -1,0 +1,449 @@
+{
+  "_about": "Regression pin for the berkeley.csv run (docs/vision/06_LAUNCH.md W1 exit criterion). Every number here was first checked against a published table or hand arithmetic in test_segment_reversal.py; this file only guards against unintended drift. Regenerate with tests/python/expected/regenerate.py and explain the change in the commit.",
+  "dataset": {
+    "name": "berkeley.csv",
+    "sha256": "431abcb370efe34dd12b807ae214111b2ffdf673462635503b7772b46f1b6656",
+    "rows": 12763
+  },
+  "run": {
+    "schema_version": 1,
+    "row_count": 12763,
+    "columns": [
+      {
+        "name": "Year",
+        "role": "constant",
+        "n_nonnull": 12763,
+        "n_levels": 1,
+        "is_amount": false,
+        "is_integer": false
+      },
+      {
+        "name": "Major",
+        "role": "categorical",
+        "n_nonnull": 12763,
+        "n_levels": 7,
+        "is_amount": false,
+        "is_integer": false
+      },
+      {
+        "name": "Sex",
+        "role": "binary",
+        "n_nonnull": 12763,
+        "n_levels": 2,
+        "is_amount": false,
+        "is_integer": false
+      },
+      {
+        "name": "Admission",
+        "role": "binary",
+        "n_nonnull": 12763,
+        "n_levels": 2,
+        "is_amount": false,
+        "is_integer": false
+      }
+    ],
+    "checks": [
+      {
+        "detector": "duplicates",
+        "version": "1.0.0",
+        "status": "did_not_apply",
+        "reason": "every column is a category, a date or text; with no identifier or amount column a repeated row is not evidence of double counting",
+        "tests_run": 0,
+        "findings": 0,
+        "not_implemented": [
+          "near_duplicates",
+          "block_duplicates"
+        ]
+      },
+      {
+        "detector": "segment_reversal",
+        "version": "1.0.0",
+        "status": "ran",
+        "reason": "tested 1 comparison, outcome, segment triples from 2 comparisons, 2 outcomes and 3 segment columns",
+        "tests_run": 1,
+        "findings": 1,
+        "candidates": {
+          "comparisons": 2,
+          "outcomes": 2,
+          "stratifiers": 3,
+          "triples_evaluated": 1
+        },
+        "skipped": {
+          "same_column": 8,
+          "orientation": 1,
+          "near_copy": 0,
+          "deterministic": 0,
+          "structural_gate": 0,
+          "not_graded": 0,
+          "fdr": 0,
+          "stability": 0,
+          "tertiles": 0
+        }
+      }
+    ],
+    "findings": [
+      {
+        "id": "f_a48d8306",
+        "detector": "segment_reversal",
+        "detector_version": "1.0.0",
+        "severity": "high",
+        "confidence": "statistical",
+        "title_key": "segment_reversal.reversal_inside_named_segments",
+        "slots": {
+          "x_column": "Sex",
+          "a": "M",
+          "b": "F",
+          "y_column": "Admission",
+          "event": "Accepted",
+          "z_column": "Major",
+          "grade": "MAJORITY",
+          "grade_all_rows": "ATTENUATION",
+          "agg_a": "44.3%",
+          "agg_b": "34.6%",
+          "agg_gap": "+9.7 points",
+          "adjusted_gap": "+3.8 points",
+          "adjusted_p": "< 0.0001",
+          "strata_count": "7",
+          "reversed_count": "4",
+          "coverage": "100%",
+          "tests_run": "1",
+          "q_value": "< 0.0001",
+          "mix_v": "0.32",
+          "rank": "1",
+          "display": "primary",
+          "agg_a_k_of_n": "3,738 of 8,442",
+          "agg_b_k_of_n": "1,494 of 4,321",
+          "crude_or": "1.504",
+          "adjusted_or": "1.184",
+          "catchall_level": "Other",
+          "catchall_share": "64.5%",
+          "named_agg_a": "44.5%",
+          "named_agg_b": "30.4%",
+          "named_agg_gap": "+14.2 points",
+          "named_adjusted_gap": "-1.9 points",
+          "named_adjusted_p": "0.2121",
+          "named_reversed_count": "4",
+          "named_strata_count": "6",
+          "named_agg_a_k_of_n": "1,198 of 2,691",
+          "named_agg_b_k_of_n": "557 of 1,835",
+          "named_adjusted_or": "0.904",
+          "named_crude_or": "1.841",
+          "named_stability": "89%"
+        },
+        "evidence": {
+          "row_indices": "<500 indices omitted>",
+          "row_count": 5751,
+          "columns": [
+            "Sex",
+            "Admission",
+            "Major"
+          ],
+          "aggregates": {
+            "grade": "MAJORITY",
+            "grade_all_rows": "ATTENUATION",
+            "reason": "most rows sit in reversed strata and the adjusted effect flips",
+            "n_valid": 12763,
+            "n_qualifying": 12763,
+            "coverage": 1.0,
+            "n_a": 8442,
+            "n_b": 4321,
+            "mean_a": 0.4427860696517413,
+            "mean_b": 0.3457532978477204,
+            "events_a": 3738,
+            "events_b": 1494,
+            "aggregate_effect": 0.09703277180402087,
+            "adjusted_effect": 0.03770216541171286,
+            "crude_odds_ratio": 1.5036515108051252,
+            "adjusted_odds_ratio": 1.183915886121365,
+            "cohens_d": null,
+            "p_adjusted_effect": 5.625193316436108e-05,
+            "p_heterogeneity": 9.046035825334574e-06,
+            "p_mix": 1.4862545526625774e-275,
+            "p_segment": 1.9715444606426667e-164,
+            "p_confounding": 1.9715444606426667e-164,
+            "q_confounding": 1.9715444606426667e-164,
+            "q_heterogeneity": 9.046035825334574e-06,
+            "p_primary": 1.9715444606426667e-164,
+            "q_value": 1.9715444606426667e-164,
+            "tests_run": 1,
+            "also_holds_for": [],
+            "mix_cramers_v": 0.3179360522302099,
+            "reversed_share": 0.2369348899161639,
+            "reversed_count": 4,
+            "stability": null,
+            "strata": [
+              {
+                "level": "Other",
+                "n_a": 5751,
+                "n_b": 2486,
+                "mean_a": 0.4416623195965919,
+                "mean_b": 0.37691069991954945,
+                "effect": 0.06475161967704246,
+                "weight": 1735.7030472259319,
+                "reversed": false,
+                "share_of_a": 0.6812366737739872,
+                "share_of_b": 0.5753297847720436,
+                "events_a": 2540,
+                "events_b": 937
+              },
+              {
+                "level": "A",
+                "n_a": 825,
+                "n_b": 108,
+                "mean_a": 0.6206060606060606,
+                "mean_b": 0.8240740740740741,
+                "effect": -0.20346801346801346,
+                "weight": 95.49839228295819,
+                "reversed": true,
+                "share_of_a": 0.09772565742714996,
+                "share_of_b": 0.02499421430224485,
+                "events_a": 512,
+                "events_b": 89
+              },
+              {
+                "level": "C",
+                "n_a": 325,
+                "n_b": 593,
+                "mean_a": 0.36923076923076925,
+                "mean_b": 0.33895446880269814,
+                "effect": 0.030276300428071112,
+                "weight": 209.9400871459695,
+                "reversed": false,
+                "share_of_a": 0.038497986259180286,
+                "share_of_b": 0.1372367507521407,
+                "events_a": 120,
+                "events_b": 201
+              },
+              {
+                "level": "D",
+                "n_a": 417,
+                "n_b": 375,
+                "mean_a": 0.33093525179856115,
+                "mean_b": 0.34933333333333333,
+                "effect": -0.01839808153477218,
+                "weight": 197.4431818181818,
+                "reversed": true,
+                "share_of_a": 0.04939587775408671,
+                "share_of_b": 0.08678546632723906,
+                "events_a": 138,
+                "events_b": 131
+              },
+              {
+                "level": "F",
+                "n_a": 373,
+                "n_b": 341,
+                "mean_a": 0.058981233243967826,
+                "mean_b": 0.07331378299120235,
+                "effect": -0.014332549747234524,
+                "weight": 178.14145658263305,
+                "reversed": true,
+                "share_of_a": 0.044183842691305375,
+                "share_of_b": 0.07891691738023605,
+                "events_a": 22,
+                "events_b": 25
+              },
+              {
+                "level": "B",
+                "n_a": 560,
+                "n_b": 25,
+                "mean_a": 0.6303571428571428,
+                "mean_b": 0.68,
+                "effect": -0.04964285714285721,
+                "weight": 23.931623931623932,
+                "reversed": true,
+                "share_of_a": 0.06633499170812604,
+                "share_of_b": 0.005785697755149271,
+                "events_a": 353,
+                "events_b": 17
+              },
+              {
+                "level": "E",
+                "n_a": 191,
+                "n_b": 393,
+                "mean_a": 0.2774869109947644,
+                "mean_b": 0.23918575063613232,
+                "effect": 0.0383011603586321,
+                "weight": 128.53253424657535,
+                "reversed": false,
+                "share_of_a": 0.022624970386164418,
+                "share_of_b": 0.09095116871094654,
+                "events_a": 53,
+                "events_b": 94
+              }
+            ],
+            "carrier_stratum": "Other",
+            "z_reads_as_outcome": false,
+            "catchall_levels": [
+              "Other"
+            ],
+            "catchall_share": 0.6453811799733605,
+            "tertile_confirmed": null,
+            "thresholds": {
+              "n_min": 5,
+              "coverage_min": 0.8,
+              "binary_size_gate": 0.02,
+              "numeric_size_gate_d": 0.2,
+              "mix_gate_v": 0.1,
+              "attenuation_ratio": 0.5,
+              "majority_share": 0.6666666666666666,
+              "stability_full": 0.9,
+              "stability_majority": 0.8,
+              "fdr_q": 0.05,
+              "bootstrap_resamples": 300,
+              "seed": 20260913
+            },
+            "without_catchall": {
+              "grade": "MAJORITY",
+              "reason": "most rows sit in reversed strata and the adjusted effect flips",
+              "n_valid": 4526,
+              "n_a": 2691,
+              "n_b": 1835,
+              "mean_a": 0.4451876625789669,
+              "mean_b": 0.30354223433242505,
+              "events_a": 1198,
+              "events_b": 557,
+              "aggregate_effect": 0.14164542824654186,
+              "adjusted_effect": -0.01862721302703334,
+              "crude_odds_ratio": 1.8410800371812925,
+              "adjusted_odds_ratio": 0.9038120538679616,
+              "p_adjusted_effect": 0.21214533664643415,
+              "p_heterogeneity": 0.001839709313300782,
+              "reversed_share": 0.6681396376491383,
+              "reversed_count": 4,
+              "stability": 0.8866666666666667,
+              "strata": [
+                {
+                  "level": "A",
+                  "n_a": 825,
+                  "n_b": 108,
+                  "mean_a": 0.6206060606060606,
+                  "mean_b": 0.8240740740740741,
+                  "effect": -0.20346801346801346,
+                  "weight": 95.49839228295819,
+                  "reversed": true,
+                  "share_of_a": 0.30657748049052397,
+                  "share_of_b": 0.05885558583106267,
+                  "events_a": 512,
+                  "events_b": 89
+                },
+                {
+                  "level": "C",
+                  "n_a": 325,
+                  "n_b": 593,
+                  "mean_a": 0.36923076923076925,
+                  "mean_b": 0.33895446880269814,
+                  "effect": 0.030276300428071112,
+                  "weight": 209.9400871459695,
+                  "reversed": false,
+                  "share_of_a": 0.12077294685990338,
+                  "share_of_b": 0.3231607629427793,
+                  "events_a": 120,
+                  "events_b": 201
+                },
+                {
+                  "level": "D",
+                  "n_a": 417,
+                  "n_b": 375,
+                  "mean_a": 0.33093525179856115,
+                  "mean_b": 0.34933333333333333,
+                  "effect": -0.01839808153477218,
+                  "weight": 197.4431818181818,
+                  "reversed": true,
+                  "share_of_a": 0.15496098104793757,
+                  "share_of_b": 0.20435967302452315,
+                  "events_a": 138,
+                  "events_b": 131
+                },
+                {
+                  "level": "F",
+                  "n_a": 373,
+                  "n_b": 341,
+                  "mean_a": 0.058981233243967826,
+                  "mean_b": 0.07331378299120235,
+                  "effect": -0.014332549747234524,
+                  "weight": 178.14145658263305,
+                  "reversed": true,
+                  "share_of_a": 0.13861018208844295,
+                  "share_of_b": 0.18583106267029972,
+                  "events_a": 22,
+                  "events_b": 25
+                },
+                {
+                  "level": "B",
+                  "n_a": 560,
+                  "n_b": 25,
+                  "mean_a": 0.6303571428571428,
+                  "mean_b": 0.68,
+                  "effect": -0.04964285714285721,
+                  "weight": 23.931623931623932,
+                  "reversed": true,
+                  "share_of_a": 0.20810107766629507,
+                  "share_of_b": 0.013623978201634877,
+                  "events_a": 353,
+                  "events_b": 17
+                },
+                {
+                  "level": "E",
+                  "n_a": 191,
+                  "n_b": 393,
+                  "mean_a": 0.2774869109947644,
+                  "mean_b": 0.23918575063613232,
+                  "effect": 0.0383011603586321,
+                  "weight": 128.53253424657535,
+                  "reversed": false,
+                  "share_of_a": 0.07097733184689707,
+                  "share_of_b": 0.21416893732970027,
+                  "events_a": 53,
+                  "events_b": 94
+                }
+              ],
+              "mix_cramers_v": 0.48585190295159564
+            }
+          },
+          "chart_spec": {
+            "kind": "strata_vs_aggregate",
+            "x": "Sex",
+            "y": "Admission",
+            "z": "Major"
+          }
+        },
+        "hypotheses": [
+          "segment_reversal.mix_is_the_story",
+          "segment_reversal.segment_chosen_before",
+          "segment_reversal.segment_is_a_consequence",
+          "segment_reversal.catchall_cannot_be_split"
+        ],
+        "follow_ups": [
+          {
+            "query": "show_rows",
+            "params": {
+              "finding_id": "f_a48d8306",
+              "description": "carrier_rows"
+            }
+          },
+          {
+            "query": "strata_rows",
+            "params": {
+              "x_column": "Sex",
+              "x_level": "M",
+              "z_column": "Major"
+            }
+          },
+          {
+            "query": "mediator_answer",
+            "params": {
+              "z_column": "Major",
+              "x_column": "Sex",
+              "options": [
+                "before",
+                "after",
+                "not_sure"
+              ]
+            }
+          }
+        ],
+        "reproduce": "In Excel: filter Major to one value, then compute the share of rows where Admission = Accepted for Sex = M and for Sex = F. Repeat for each Major value. Then remove the filter and compute both shares again."
+      }
+    ]
+  }
+}

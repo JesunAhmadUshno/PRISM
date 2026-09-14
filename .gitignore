@@ -58,3 +58,6 @@ venv/
 
 # Pages assembly output (marketing site + app), built by deploy.yml
 _site/
+
+# Golden datasets are downloaded on first use and digest-verified (tests/python/golden.py)
+tests/python/fixtures/golden/*.csv
