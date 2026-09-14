@@ -21,3 +21,7 @@ pytest==9.0.2
 numpy==2.4.2
 pandas==2.3.3
 scipy==1.17.1
+
+# JSON Schema validation of every finding the detectors emit
+# (schema/finding.schema.json). Test-only, like everything else here.
+jsonschema==4.26.0
