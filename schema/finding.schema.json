@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jesunahmadushno.github.io/PRISM/schema/finding.schema.json",
+  "title": "PRISM Finding",
+  "description": "One finding produced by one detector. Structured evidence, never prose. Every number the user sees is a formatted string in slots; every number a chart or a test reads is a raw value in evidence.aggregates. See docs/vision/03_ARCHITECTURE.md section 3.5.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "detector",
+    "detector_version",
+    "severity",
+    "confidence",
+    "title_key",
+    "slots",
+    "evidence",
+    "hypotheses",
+    "follow_ups",
+    "reproduce"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^f_[0-9a-f]{8}$",
+      "description": "Deterministic for a given detector, title, columns and slots, so a user's answers stay attached to the same card across runs of the same file."
+    },
+    "detector": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "detector_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["low", "medium", "high"]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["rule", "statistical", "heuristic"],
+      "description": "An enum, not a float. A rule fired or did not; a statistical finding carries its p-value and effect size in aggregates; a heuristic says so."
+    },
+    "title_key": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_.]*$",
+      "description": "A template key, never a sentence. The UI owns the words."
+    },
+    "slots": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Engine-formatted strings that fill the template. Formatting lives in Python where it is tested once."
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["row_indices", "row_count", "columns", "aggregates"],
+      "properties": {
+        "row_indices": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 },
+          "description": "Zero-based positions in the file as loaded, capped; row_count carries the full number."
+        },
+        "row_count": { "type": "integer", "minimum": 0 },
+        "columns": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "aggregates": {
+          "type": "object",
+          "description": "Raw values: counts, rates, effect sizes, p-values, tables. NaN is forbidden on the wire; absent values are null."
+        },
+        "chart_spec": {
+          "type": "object",
+          "required": ["kind"],
+          "properties": { "kind": { "type": "string" } }
+        }
+      }
+    },
+    "hypotheses": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_.]*$" },
+      "description": "Closed list of template keys for how the finding could be innocent or otherwise. Never free text."
+    },
+    "follow_ups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["query", "params"],
+        "properties": {
+          "query": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+          "params": { "type": "object" }
+        }
+      },
+      "description": "Grounded queries the engine can answer with one click. Generated from the finding type and the schema, so always answerable."
+    },
+    "reproduce": {
+      "type": "string",
+      "minLength": 1,
+      "description": "How to recompute the headline number without PRISM, in spreadsheet terms."
+    },
+    "extra": {
+      "type": "object",
+      "description": "Detector-specific structured detail that does not fit the shared fields. Must remain optional for every consumer."
+    }
+  }
+}

@@ -1,0 +1,2279 @@
+{
+  "_about": "Regression pin for the titanic.csv run (docs/vision/06_LAUNCH.md W1 exit criterion). Every number here was first checked against a published table or hand arithmetic in test_segment_reversal.py; this file only guards against unintended drift. Regenerate with tests/python/expected/regenerate.py and explain the change in the commit.",
+  "dataset": {
+    "name": "titanic.csv",
+    "sha256": "4a437fde05fe5264e1701a7387ac6fb75393772ba38bb2c9c566405af5af4bd7",
+    "rows": 891
+  },
+  "run": {
+    "schema_version": 1,
+    "row_count": 891,
+    "columns": [
+      {
+        "name": "PassengerId",
+        "role": "identifier",
+        "n_nonnull": 891,
+        "n_levels": 891,
+        "is_amount": false,
+        "is_integer": true
+      },
+      {
+        "name": "Survived",
+        "role": "binary",
+        "n_nonnull": 891,
+        "n_levels": 2,
+        "is_amount": false,
+        "is_integer": true
+      },
+      {
+        "name": "Pclass",
+        "role": "categorical",
+        "n_nonnull": 891,
+        "n_levels": 3,
+        "is_amount": false,
+        "is_integer": true
+      },
+      {
+        "name": "Name",
+        "role": "identifier",
+        "n_nonnull": 891,
+        "n_levels": 891,
+        "is_amount": false,
+        "is_integer": false
+      },
+      {
+        "name": "Sex",
+        "role": "binary",
+        "n_nonnull": 891,
+        "n_levels": 2,
+        "is_amount": false,
+        "is_integer": false
+      },
+      {
+        "name": "Age",
+        "role": "numeric",
+        "n_nonnull": 714,
+        "n_levels": 88,
+        "is_amount": false,
+        "is_integer": false
+      },
+      {
+        "name": "SibSp",
+        "role": "numeric",
+        "n_nonnull": 891,
+        "n_levels": 7,
+        "is_amount": false,
+        "is_integer": true
+      },
+      {
+        "name": "Parch",
+        "role": "numeric",
+        "n_nonnull": 891,
+        "n_levels": 7,
+        "is_amount": false,
+        "is_integer": true
+      },
+      {
+        "name": "Ticket",
+        "role": "text",
+        "n_nonnull": 891,
+        "n_levels": 681,
+        "is_amount": false,
+        "is_integer": false
+      },
+      {
+        "name": "Fare",
+        "role": "numeric",
+        "n_nonnull": 891,
+        "n_levels": 248,
+        "is_amount": true,
+        "is_integer": false
+      },
+      {
+        "name": "Cabin",
+        "role": "text",
+        "n_nonnull": 204,
+        "n_levels": 147,
+        "is_amount": false,
+        "is_integer": false
+      },
+      {
+        "name": "Embarked",
+        "role": "categorical",
+        "n_nonnull": 889,
+        "n_levels": 3,
+        "is_amount": false,
+        "is_integer": false
+      }
+    ],
+    "checks": [
+      {
+        "detector": "duplicates",
+        "version": "1.0.0",
+        "status": "ran",
+        "reason": "ran on identifier or amount column PassengerId",
+        "tests_run": 0,
+        "findings": 0,
+        "not_implemented": [
+          "near_duplicates",
+          "block_duplicates"
+        ]
+      },
+      {
+        "detector": "segment_reversal",
+        "version": "1.0.0",
+        "status": "ran",
+        "reason": "tested 119 comparison, outcome, segment triples from 10 comparisons, 6 outcomes and 6 segment columns",
+        "tests_run": 119,
+        "findings": 12,
+        "candidates": {
+          "comparisons": 10,
+          "outcomes": 6,
+          "stratifiers": 6,
+          "triples_evaluated": 119
+        },
+        "skipped": {
+          "same_column": 58,
+          "orientation": 4,
+          "near_copy": 0,
+          "deterministic": 0,
+          "structural_gate": 129,
+          "not_graded": 44,
+          "fdr": 36,
+          "stability": 0,
+          "tertiles": 0,
+          "merged_into_pair": 27
+        }
+      }
+    ],
+    "findings": [
+      {
+        "id": "f_672448dd",
+        "detector": "segment_reversal",
+        "detector_version": "1.0.0",
+        "severity": "medium",
+        "confidence": "statistical",
+        "title_key": "segment_reversal.attenuation",
+        "slots": {
+          "x_column": "Embarked",
+          "a": "C",
+          "b": "rest",
+          "y_column": "Fare",
+          "event": "Fare",
+          "z_column": "Pclass",
+          "grade": "ATTENUATION",
+          "grade_all_rows": "ATTENUATION",
+          "agg_a": "59.954",
+          "agg_b": "25.606",
+          "agg_gap": "+34.3 Fare",
+          "adjusted_gap": "+13.4 Fare",
+          "adjusted_p": "0.0002",
+          "strata_count": "3",
+          "reversed_count": "1",
+          "coverage": "100%",
+          "tests_run": "119",
+          "q_value": "< 0.0001",
+          "mix_v": "0.30",
+          "rank": "1",
+          "display": "primary",
+          "cohens_d": "0.72"
+        },
+        "evidence": {
+          "row_indices": "<85 indices omitted>",
+          "row_count": 85,
+          "columns": [
+            "Embarked",
+            "Fare",
+            "Pclass"
+          ],
+          "aggregates": {
+            "grade": "ATTENUATION",
+            "grade_all_rows": "ATTENUATION",
+            "reason": "the gap mostly disappears once the segment is held constant",
+            "n_valid": 889,
+            "n_qualifying": 889,
+            "coverage": 1.0,
+            "n_a": 168,
+            "n_b": 721,
+            "mean_a": 59.95414404761905,
+            "mean_b": 25.60562149791956,
+            "events_a": null,
+            "events_b": null,
+            "aggregate_effect": 34.348522549699496,
+            "adjusted_effect": 13.425346724066593,
+            "crude_odds_ratio": null,
+            "adjusted_odds_ratio": null,
+            "cohens_d": 0.7175598844740002,
+            "p_adjusted_effect": 0.00018362750803938008,
+            "p_heterogeneity": 5.325253878654528e-06,
+            "p_mix": 2.2498620589141804e-18,
+            "p_segment": 3.9731247008632975e-84,
+            "p_confounding": 2.2498620589141804e-18,
+            "q_confounding": 5.3546717002157496e-17,
+            "q_heterogeneity": 5.7609564687262624e-05,
+            "p_primary": 2.2498620589141804e-18,
+            "q_value": 5.3546717002157496e-17,
+            "tests_run": 119,
+            "also_holds_for": [
+              "Pclass (S vs C)",
+              "Pclass (S vs rest)",
+              "Survived",
+              "quartiles of Age"
+            ],
+            "mix_cramers_v": 0.3023554429365417,
+            "reversed_share": 0.5523059617547806,
+            "reversed_count": 1,
+            "stability": null,
+            "strata": [
+              {
+                "level": "3",
+                "n_a": 66,
+                "n_b": 425,
+                "mean_a": 11.214083333333337,
+                "mean_b": 14.057801411764713,
+                "effect": -2.843718078431376,
+                "weight": 57.128309572301426,
+                "reversed": true,
+                "share_of_a": 0.39285714285714285,
+                "share_of_b": 0.5894590846047156
+              },
+              {
+                "level": "1",
+                "n_a": 85,
+                "n_b": 129,
+                "mean_a": 104.71852941176469,
+                "mean_b": 70.66928294573646,
+                "effect": 34.04924646602824,
+                "weight": 51.23831775700935,
+                "reversed": false,
+                "share_of_a": 0.5059523809523809,
+                "share_of_b": 0.17891816920943135
+              },
+              {
+                "level": "2",
+                "n_a": 17,
+                "n_b": 167,
+                "mean_a": 25.358335294117644,
+                "mean_b": 20.184131736526943,
+                "effect": 5.174203557590701,
+                "weight": 15.429347826086957,
+                "reversed": false,
+                "share_of_a": 0.10119047619047619,
+                "share_of_b": 0.231622746185853
+              }
+            ],
+            "carrier_stratum": "1",
+            "z_reads_as_outcome": false,
+            "catchall_levels": [],
+            "catchall_share": 0.0,
+            "tertile_confirmed": null,
+            "thresholds": {
+              "n_min": 5,
+              "coverage_min": 0.8,
+              "binary_size_gate": 0.02,
+              "numeric_size_gate_d": 0.2,
+              "mix_gate_v": 0.1,
+              "attenuation_ratio": 0.5,
+              "majority_share": 0.6666666666666666,
+              "stability_full": 0.9,
+              "stability_majority": 0.8,
+              "fdr_q": 0.05,
+              "bootstrap_resamples": 300,
+              "seed": 20260913
+            }
+          },
+          "chart_spec": {
+            "kind": "strata_vs_aggregate",
+            "x": "Embarked",
+            "y": "Fare",
+            "z": "Pclass"
+          }
+        },
+        "hypotheses": [
+          "segment_reversal.mix_is_the_story",
+          "segment_reversal.segment_chosen_before",
+          "segment_reversal.segment_is_a_consequence"
+        ],
+        "follow_ups": [
+          {
+            "query": "show_rows",
+            "params": {
+              "finding_id": "f_672448dd",
+              "description": "carrier_rows"
+            }
+          },
+          {
+            "query": "strata_rows",
+            "params": {
+              "x_column": "Embarked",
+              "x_level": "C",
+              "z_column": "Pclass"
+            }
+          },
+          {
+            "query": "mediator_answer",
+            "params": {
+              "z_column": "Pclass",
+              "x_column": "Embarked",
+              "options": [
+                "before",
+                "after",
+                "not_sure"
+              ]
+            }
+          }
+        ],
+        "reproduce": "In Excel: filter Pclass to one value, then average Fare for Embarked = C and for Embarked = rest. Repeat for each Pclass value. Then remove the filter and average again."
+      },
+      {
+        "id": "f_4985ce85",
+        "detector": "segment_reversal",
+        "detector_version": "1.0.0",
+        "severity": "medium",
+        "confidence": "statistical",
+        "title_key": "segment_reversal.attenuation",
+        "slots": {
+          "x_column": "Survived",
+          "a": "0",
+          "b": "1",
+          "y_column": "Fare",
+          "event": "Fare",
+          "z_column": "Pclass",
+          "grade": "ATTENUATION",
+          "grade_all_rows": "ATTENUATION",
+          "agg_a": "22.118",
+          "agg_b": "48.395",
+          "agg_gap": "-26.3 Fare",
+          "adjusted_gap": "-9.02 Fare",
+          "adjusted_p": "0.0020",
+          "strata_count": "3",
+          "reversed_count": "0",
+          "coverage": "100%",
+          "tests_run": "119",
+          "q_value": "< 0.0001",
+          "mix_v": "0.34",
+          "rank": "2",
+          "display": "primary",
+          "cohens_d": "-0.55"
+        },
+        "evidence": {
+          "row_indices": "<372 indices omitted>",
+          "row_count": 372,
+          "columns": [
+            "Survived",
+            "Fare",
+            "Pclass"
+          ],
+          "aggregates": {
+            "grade": "ATTENUATION",
+            "grade_all_rows": "ATTENUATION",
+            "reason": "the gap mostly disappears once the segment is held constant",
+            "n_valid": 891,
+            "n_qualifying": 891,
+            "coverage": 1.0,
+            "n_a": 549,
+            "n_b": 342,
+            "mean_a": 22.117886885245902,
+            "mean_b": 48.39540760233918,
+            "events_a": null,
+            "events_b": null,
+            "aggregate_effect": -26.27752071709328,
+            "adjusted_effect": -9.019589008732646,
+            "crude_odds_ratio": null,
+            "adjusted_odds_ratio": null,
+            "cohens_d": -0.54691006153194,
+            "p_adjusted_effect": 0.0020484386800858735,
+            "p_heterogeneity": 2.4666463077684502e-05,
+            "p_mix": 4.549251711298727e-23,
+            "p_segment": 1.031376320913912e-84,
+            "p_confounding": 4.549251711298727e-23,
+            "q_confounding": 3.0998356293090907e-21,
+            "q_heterogeneity": 0.00020523699747392998,
+            "p_primary": 4.549251711298727e-23,
+            "q_value": 3.0998356293090907e-21,
+            "tests_run": 119,
+            "also_holds_for": [
+              "Embarked",
+              "quartiles of Age"
+            ],
+            "mix_cramers_v": 0.3398173880053118,
+            "reversed_share": 0.0,
+            "reversed_count": 0,
+            "stability": null,
+            "strata": [
+              {
+                "level": "3",
+                "n_a": 372,
+                "n_b": 119,
+                "mean_a": 13.66936424731183,
+                "mean_b": 13.694887394957966,
+                "effect": -0.025523147646136835,
+                "weight": 90.15885947046843,
+                "reversed": false,
+                "share_of_a": 0.6775956284153005,
+                "share_of_b": 0.347953216374269
+              },
+              {
+                "level": "1",
+                "n_a": 80,
+                "n_b": 136,
+                "mean_a": 64.68400750000002,
+                "mean_b": 95.60802867647055,
+                "effect": -30.924021176470532,
+                "weight": 50.370370370370374,
+                "reversed": false,
+                "share_of_a": 0.14571948998178508,
+                "share_of_b": 0.39766081871345027
+              },
+              {
+                "level": "2",
+                "n_a": 97,
+                "n_b": 87,
+                "mean_a": 19.412327835051546,
+                "mean_b": 22.0557,
+                "effect": -2.643372164948456,
+                "weight": 45.86413043478261,
+                "reversed": false,
+                "share_of_a": 0.1766848816029144,
+                "share_of_b": 0.2543859649122807
+              }
+            ],
+            "carrier_stratum": "3",
+            "z_reads_as_outcome": false,
+            "catchall_levels": [],
+            "catchall_share": 0.0,
+            "tertile_confirmed": null,
+            "thresholds": {
+              "n_min": 5,
+              "coverage_min": 0.8,
+              "binary_size_gate": 0.02,
+              "numeric_size_gate_d": 0.2,
+              "mix_gate_v": 0.1,
+              "attenuation_ratio": 0.5,
+              "majority_share": 0.6666666666666666,
+              "stability_full": 0.9,
+              "stability_majority": 0.8,
+              "fdr_q": 0.05,
+              "bootstrap_resamples": 300,
+              "seed": 20260913
+            }
+          },
+          "chart_spec": {
+            "kind": "strata_vs_aggregate",
+            "x": "Survived",
+            "y": "Fare",
+            "z": "Pclass"
+          }
+        },
+        "hypotheses": [
+          "segment_reversal.mix_is_the_story",
+          "segment_reversal.segment_chosen_before",
+          "segment_reversal.segment_is_a_consequence"
+        ],
+        "follow_ups": [
+          {
+            "query": "show_rows",
+            "params": {
+              "finding_id": "f_4985ce85",
+              "description": "carrier_rows"
+            }
+          },
+          {
+            "query": "strata_rows",
+            "params": {
+              "x_column": "Survived",
+              "x_level": "0",
+              "z_column": "Pclass"
+            }
+          },
+          {
+            "query": "mediator_answer",
+            "params": {
+              "z_column": "Pclass",
+              "x_column": "Survived",
+              "options": [
+                "before",
+                "after",
+                "not_sure"
+              ]
+            }
+          }
+        ],
+        "reproduce": "In Excel: filter Pclass to one value, then average Fare for Survived = 0 and for Survived = 1. Repeat for each Pclass value. Then remove the filter and average again."
+      },
+      {
+        "id": "f_c881eed1",
+        "detector": "segment_reversal",
+        "detector_version": "1.0.0",
+        "severity": "medium",
+        "confidence": "statistical",
+        "title_key": "segment_reversal.attenuation",
+        "slots": {
+          "x_column": "Sex",
+          "a": "male",
+          "b": "female",
+          "y_column": "Fare",
+          "event": "Fare",
+          "z_column": "Survived",
+          "grade": "ATTENUATION",
+          "grade_all_rows": "ATTENUATION",
+          "agg_a": "25.524",
+          "agg_b": "44.480",
+          "agg_gap": "-19 Fare",
+          "adjusted_gap": "-6.27 Fare",
+          "adjusted_p": "0.1181",
+          "strata_count": "2",
+          "reversed_count": "0",
+          "coverage": "100%",
+          "tests_run": "119",
+          "q_value": "< 0.0001",
+          "mix_v": "0.54",
+          "rank": "3",
+          "display": "primary",
+          "cohens_d": "-0.39"
+        },
+        "evidence": {
+          "row_indices": "<468 indices omitted>",
+          "row_count": 468,
+          "columns": [
+            "Sex",
+            "Fare",
+            "Survived"
+          ],
+          "aggregates": {
+            "grade": "ATTENUATION",
+            "grade_all_rows": "ATTENUATION",
+            "reason": "the gap mostly disappears once the segment is held constant",
+            "n_valid": 891,
+            "n_qualifying": 891,
+            "coverage": 1.0,
+            "n_a": 577,
+            "n_b": 314,
+            "mean_a": 25.523893414211443,
+            "mean_b": 44.47981783439491,
+            "events_a": null,
+            "events_b": null,
+            "aggregate_effect": -18.955924420183464,
+            "adjusted_effect": -6.273028158547215,
+            "crude_odds_ratio": null,
+            "adjusted_odds_ratio": null,
+            "cohens_d": -0.3877427883992592,
+            "p_adjusted_effect": 0.11812100790143899,
+            "p_heterogeneity": 0.21051620560440862,
+            "p_mix": 3.7117477701134244e-59,
+            "p_segment": 6.120189341924269e-15,
+            "p_confounding": 6.120189341924269e-15,
+            "q_confounding": 5.202160940635629e-14,
+            "q_heterogeneity": 0.321172159832367,
+            "p_primary": 6.120189341924269e-15,
+            "q_value": 5.202160940635629e-14,
+            "tests_run": 119,
+            "also_holds_for": [
+              "Pclass"
+            ],
+            "mix_cramers_v": 0.5433513806577551,
+            "reversed_share": 0.0,
+            "reversed_count": 0,
+            "stability": null,
+            "strata": [
+              {
+                "level": "0",
+                "n_a": 468,
+                "n_b": 81,
+                "mean_a": 21.960992948717944,
+                "mean_b": 23.02438518518519,
+                "effect": -1.0633922364672443,
+                "weight": 69.04918032786885,
+                "reversed": false,
+                "share_of_a": 0.8110918544194108,
+                "share_of_b": 0.25796178343949044
+              },
+              {
+                "level": "1",
+                "n_a": 109,
+                "n_b": 233,
+                "mean_a": 40.82148440366974,
+                "mean_b": 51.93857339055791,
+                "effect": -11.11708898688817,
+                "weight": 74.26023391812865,
+                "reversed": false,
+                "share_of_a": 0.18890814558058924,
+                "share_of_b": 0.7420382165605095
+              }
+            ],
+            "carrier_stratum": "0",
+            "z_reads_as_outcome": true,
+            "catchall_levels": [],
+            "catchall_share": 0.0,
+            "tertile_confirmed": null,
+            "thresholds": {
+              "n_min": 5,
+              "coverage_min": 0.8,
+              "binary_size_gate": 0.02,
+              "numeric_size_gate_d": 0.2,
+              "mix_gate_v": 0.1,
+              "attenuation_ratio": 0.5,
+              "majority_share": 0.6666666666666666,
+              "stability_full": 0.9,
+              "stability_majority": 0.8,
+              "fdr_q": 0.05,
+              "bootstrap_resamples": 300,
+              "seed": 20260913
+            }
+          },
+          "chart_spec": {
+            "kind": "strata_vs_aggregate",
+            "x": "Sex",
+            "y": "Fare",
+            "z": "Survived"
+          }
+        },
+        "hypotheses": [
+          "segment_reversal.mix_is_the_story",
+          "segment_reversal.segment_chosen_before",
+          "segment_reversal.segment_is_a_consequence"
+        ],
+        "follow_ups": [
+          {
+            "query": "show_rows",
+            "params": {
+              "finding_id": "f_c881eed1",
+              "description": "carrier_rows"
+            }
+          },
+          {
+            "query": "strata_rows",
+            "params": {
+              "x_column": "Sex",
+              "x_level": "male",
+              "z_column": "Survived"
+            }
+          },
+          {
+            "query": "mediator_answer",
+            "params": {
+              "z_column": "Survived",
+              "x_column": "Sex",
+              "options": [
+                "before",
+                "after",
+                "not_sure"
+              ]
+            }
+          }
+        ],
+        "reproduce": "In Excel: filter Survived to one value, then average Fare for Sex = male and for Sex = female. Repeat for each Survived value. Then remove the filter and average again."
+      },
+      {
+        "id": "f_6f4cec58",
+        "detector": "segment_reversal",
+        "detector_version": "1.0.0",
+        "severity": "medium",
+        "confidence": "statistical",
+        "title_key": "segment_reversal.attenuation",
+        "slots": {
+          "x_column": "Sex",
+          "a": "male",
+          "b": "female",
+          "y_column": "SibSp",
+          "event": "SibSp",
+          "z_column": "quartiles of Fare",
+          "grade": "ATTENUATION",
+          "grade_all_rows": "ATTENUATION",
+          "agg_a": "0.430",
+          "agg_b": "0.694",
+          "agg_gap": "-0.264 SibSp",
+          "adjusted_gap": "-0.0463 SibSp",
+          "adjusted_p": "0.5262",
+          "strata_count": "4",
+          "reversed_count": "2",
+          "coverage": "100%",
+          "tests_run": "119",
+          "q_value": "< 0.0001",
+          "mix_v": "0.24",
+          "rank": "4",
+          "display": "also_found",
+          "cohens_d": "-0.24"
+        },
+        "evidence": {
+          "row_indices": "<180 indices omitted>",
+          "row_count": 180,
+          "columns": [
+            "Sex",
+            "SibSp",
+            "Fare"
+          ],
+          "aggregates": {
+            "grade": "ATTENUATION",
+            "grade_all_rows": "ATTENUATION",
+            "reason": "the gap mostly disappears once the segment is held constant",
+            "n_valid": 891,
+            "n_qualifying": 891,
+            "coverage": 1.0,
+            "n_a": 577,
+            "n_b": 314,
+            "mean_a": 0.42980935875216636,
+            "mean_b": 0.6942675159235668,
+            "events_a": null,
+            "events_b": null,
+            "aggregate_effect": -0.2644581571714005,
+            "adjusted_effect": -0.046316381234246654,
+            "crude_odds_ratio": null,
+            "adjusted_odds_ratio": null,
+            "cohens_d": -0.2412740645355804,
+            "p_adjusted_effect": 0.5261782046756689,
+            "p_heterogeneity": 0.1230515356746152,
+            "p_mix": 1.6899291414250334e-11,
+            "p_segment": 2.3564554006561174e-34,
+            "p_confounding": 1.6899291414250334e-11,
+            "q_confounding": 9.140980355889953e-11,
+            "q_heterogeneity": 0.215848637065401,
+            "p_primary": 1.6899291414250334e-11,
+            "q_value": 9.140980355889953e-11,
+            "tests_run": 119,
+            "also_holds_for": [
+              "Survived",
+              "Embarked"
+            ],
+            "mix_cramers_v": 0.24427437646884223,
+            "reversed_share": 0.4994388327721661,
+            "reversed_count": 2,
+            "stability": null,
+            "strata": [
+              {
+                "level": "0 to 7.91 of Fare",
+                "n_a": 180,
+                "n_b": 43,
+                "mean_a": 0.06111111111111111,
+                "mean_b": 0.023255813953488372,
+                "effect": 0.03785529715762274,
+                "weight": 34.7085201793722,
+                "reversed": true,
+                "share_of_a": 0.3119584055459272,
+                "share_of_b": 0.13694267515923567
+              },
+              {
+                "level": "7.91 to 14.45 of Fare",
+                "n_a": 157,
+                "n_b": 67,
+                "mean_a": 0.10828025477707007,
+                "mean_b": 0.23880597014925373,
+                "effect": -0.13052571537218366,
+                "weight": 46.95982142857143,
+                "reversed": false,
+                "share_of_a": 0.2720970537261698,
+                "share_of_b": 0.21337579617834396
+              },
+              {
+                "level": "14.45 to 31 of Fare",
+                "n_a": 129,
+                "n_b": 93,
+                "mean_a": 0.6434108527131783,
+                "mean_b": 0.9032258064516129,
+                "effect": -0.25981495373843455,
+                "weight": 54.04054054054054,
+                "reversed": false,
+                "share_of_a": 0.22357019064124783,
+                "share_of_b": 0.2961783439490446
+              },
+              {
+                "level": "31 to 512.33 of Fare",
+                "n_a": 111,
+                "n_b": 111,
+                "mean_a": 1.2342342342342343,
+                "mean_b": 1.054054054054054,
+                "effect": 0.18018018018018034,
+                "weight": 55.5,
+                "reversed": true,
+                "share_of_a": 0.1923743500866551,
+                "share_of_b": 0.3535031847133758
+              }
+            ],
+            "carrier_stratum": "0 to 7.91 of Fare",
+            "z_reads_as_outcome": false,
+            "catchall_levels": [],
+            "catchall_share": 0.0,
+            "tertile_confirmed": null,
+            "thresholds": {
+              "n_min": 5,
+              "coverage_min": 0.8,
+              "binary_size_gate": 0.02,
+              "numeric_size_gate_d": 0.2,
+              "mix_gate_v": 0.1,
+              "attenuation_ratio": 0.5,
+              "majority_share": 0.6666666666666666,
+              "stability_full": 0.9,
+              "stability_majority": 0.8,
+              "fdr_q": 0.05,
+              "bootstrap_resamples": 300,
+              "seed": 20260913
+            }
+          },
+          "chart_spec": {
+            "kind": "strata_vs_aggregate",
+            "x": "Sex",
+            "y": "SibSp",
+            "z": "Fare"
+          }
+        },
+        "hypotheses": [
+          "segment_reversal.mix_is_the_story",
+          "segment_reversal.segment_chosen_before",
+          "segment_reversal.segment_is_a_consequence"
+        ],
+        "follow_ups": [
+          {
+            "query": "show_rows",
+            "params": {
+              "finding_id": "f_6f4cec58",
+              "description": "carrier_rows"
+            }
+          },
+          {
+            "query": "strata_rows",
+            "params": {
+              "x_column": "Sex",
+              "x_level": "male",
+              "z_column": "Fare"
+            }
+          },
+          {
+            "query": "mediator_answer",
+            "params": {
+              "z_column": "Fare",
+              "x_column": "Sex",
+              "options": [
+                "before",
+                "after",
+                "not_sure"
+              ]
+            }
+          }
+        ],
+        "reproduce": "In Excel: filter Fare to one value, then average SibSp for Sex = male and for Sex = female. Repeat for each Fare value. Then remove the filter and average again."
+      },
+      {
+        "id": "f_9e1cc9e5",
+        "detector": "segment_reversal",
+        "detector_version": "1.0.0",
+        "severity": "low",
+        "confidence": "statistical",
+        "title_key": "segment_reversal.interaction",
+        "slots": {
+          "x_column": "Sex",
+          "a": "male",
+          "b": "female",
+          "y_column": "Parch",
+          "event": "Parch",
+          "z_column": "quartiles of Fare",
+          "grade": "INTERACTION",
+          "grade_all_rows": "INTERACTION",
+          "agg_a": "0.236",
+          "agg_b": "0.650",
+          "agg_gap": "-0.414 Parch",
+          "adjusted_gap": "-0.267 Parch",
+          "adjusted_p": "< 0.0001",
+          "strata_count": "4",
+          "reversed_count": "0",
+          "coverage": "100%",
+          "tests_run": "119",
+          "q_value": "0.0140",
+          "mix_v": "0.24",
+          "rank": "5",
+          "display": "also_found",
+          "cohens_d": "-0.53"
+        },
+        "evidence": {
+          "row_indices": "<180 indices omitted>",
+          "row_count": 180,
+          "columns": [
+            "Sex",
+            "Parch",
+            "Fare"
+          ],
+          "aggregates": {
+            "grade": "INTERACTION",
+            "grade_all_rows": "INTERACTION",
+            "reason": "same direction everywhere but the size of the gap differs by segment",
+            "n_valid": 891,
+            "n_qualifying": 891,
+            "coverage": 1.0,
+            "n_a": 577,
+            "n_b": 314,
+            "mean_a": 0.23570190641247835,
+            "mean_b": 0.6496815286624203,
+            "events_a": null,
+            "events_b": null,
+            "aggregate_effect": -0.413979622249942,
+            "adjusted_effect": -0.2666327199384024,
+            "crude_odds_ratio": null,
+            "adjusted_odds_ratio": null,
+            "cohens_d": -0.5295003208035426,
+            "p_adjusted_effect": 4.7317462886161616e-07,
+            "p_heterogeneity": 0.003996332150921639,
+            "p_mix": 1.6899291414250334e-11,
+            "p_segment": 4.3396894195240696e-35,
+            "p_confounding": 1.6899291414250334e-11,
+            "q_confounding": 9.140980355889953e-11,
+            "q_heterogeneity": 0.013987162528225737,
+            "p_primary": 0.003996332150921639,
+            "q_value": 0.013987162528225737,
+            "tests_run": 119,
+            "also_holds_for": [
+              "Survived",
+              "Embarked",
+              "Pclass"
+            ],
+            "mix_cramers_v": 0.24427437646884223,
+            "reversed_share": 0.0,
+            "reversed_count": 0,
+            "stability": null,
+            "strata": [
+              {
+                "level": "0 to 7.91 of Fare",
+                "n_a": 180,
+                "n_b": 43,
+                "mean_a": 0.016666666666666666,
+                "mean_b": 0.046511627906976744,
+                "effect": -0.029844961240310077,
+                "weight": 34.7085201793722,
+                "reversed": false,
+                "share_of_a": 0.3119584055459272,
+                "share_of_b": 0.13694267515923567
+              },
+              {
+                "level": "7.91 to 14.45 of Fare",
+                "n_a": 157,
+                "n_b": 67,
+                "mean_a": 0.03821656050955414,
+                "mean_b": 0.23880597014925373,
+                "effect": -0.2005894096396996,
+                "weight": 46.95982142857143,
+                "reversed": false,
+                "share_of_a": 0.2720970537261698,
+                "share_of_b": 0.21337579617834396
+              },
+              {
+                "level": "14.45 to 31 of Fare",
+                "n_a": 129,
+                "n_b": 93,
+                "mean_a": 0.3798449612403101,
+                "mean_b": 0.9354838709677419,
+                "effect": -0.5556389097274318,
+                "weight": 54.04054054054054,
+                "reversed": false,
+                "share_of_a": 0.22357019064124783,
+                "share_of_b": 0.2961783439490446
+              },
+              {
+                "level": "31 to 512.33 of Fare",
+                "n_a": 111,
+                "n_b": 111,
+                "mean_a": 0.7027027027027027,
+                "mean_b": 0.8918918918918919,
+                "effect": -0.18918918918918914,
+                "weight": 55.5,
+                "reversed": false,
+                "share_of_a": 0.1923743500866551,
+                "share_of_b": 0.3535031847133758
+              }
+            ],
+            "carrier_stratum": "0 to 7.91 of Fare",
+            "z_reads_as_outcome": false,
+            "catchall_levels": [],
+            "catchall_share": 0.0,
+            "tertile_confirmed": null,
+            "thresholds": {
+              "n_min": 5,
+              "coverage_min": 0.8,
+              "binary_size_gate": 0.02,
+              "numeric_size_gate_d": 0.2,
+              "mix_gate_v": 0.1,
+              "attenuation_ratio": 0.5,
+              "majority_share": 0.6666666666666666,
+              "stability_full": 0.9,
+              "stability_majority": 0.8,
+              "fdr_q": 0.05,
+              "bootstrap_resamples": 300,
+              "seed": 20260913
+            }
+          },
+          "chart_spec": {
+            "kind": "strata_vs_aggregate",
+            "x": "Sex",
+            "y": "Parch",
+            "z": "Fare"
+          }
+        },
+        "hypotheses": [
+          "segment_reversal.effect_size_varies_by_segment"
+        ],
+        "follow_ups": [
+          {
+            "query": "show_rows",
+            "params": {
+              "finding_id": "f_9e1cc9e5",
+              "description": "carrier_rows"
+            }
+          },
+          {
+            "query": "strata_rows",
+            "params": {
+              "x_column": "Sex",
+              "x_level": "male",
+              "z_column": "Fare"
+            }
+          },
+          {
+            "query": "mediator_answer",
+            "params": {
+              "z_column": "Fare",
+              "x_column": "Sex",
+              "options": [
+                "before",
+                "after",
+                "not_sure"
+              ]
+            }
+          }
+        ],
+        "reproduce": "In Excel: filter Fare to one value, then average Parch for Sex = male and for Sex = female. Repeat for each Fare value. Then remove the filter and average again."
+      },
+      {
+        "id": "f_d41f41ca",
+        "detector": "segment_reversal",
+        "detector_version": "1.0.0",
+        "severity": "high",
+        "confidence": "statistical",
+        "title_key": "segment_reversal.full",
+        "slots": {
+          "x_column": "Pclass",
+          "a": "1",
+          "b": "rest",
+          "y_column": "Sex",
+          "event": "female",
+          "z_column": "Survived",
+          "grade": "FULL",
+          "grade_all_rows": "FULL",
+          "agg_a": "43.5%",
+          "agg_b": "32.6%",
+          "agg_gap": "+10.9 points",
+          "adjusted_gap": "-7.0 points",
+          "adjusted_p": "0.0420",
+          "strata_count": "2",
+          "reversed_count": "2",
+          "coverage": "100%",
+          "tests_run": "119",
+          "q_value": "< 0.0001",
+          "mix_v": "0.29",
+          "rank": "6",
+          "display": "also_found",
+          "agg_a_k_of_n": "94 of 216",
+          "agg_b_k_of_n": "220 of 675",
+          "crude_or": "1.594",
+          "adjusted_or": "0.647",
+          "stability": "99%"
+        },
+        "evidence": {
+          "row_indices": "<136 indices omitted>",
+          "row_count": 136,
+          "columns": [
+            "Pclass",
+            "Sex",
+            "Survived"
+          ],
+          "aggregates": {
+            "grade": "FULL",
+            "grade_all_rows": "FULL",
+            "reason": "every qualifying stratum reverses and the adjusted effect flips",
+            "n_valid": 891,
+            "n_qualifying": 891,
+            "coverage": 1.0,
+            "n_a": 216,
+            "n_b": 675,
+            "mean_a": 0.4351851851851852,
+            "mean_b": 0.32592592592592595,
+            "events_a": 94,
+            "events_b": 220,
+            "aggregate_effect": 0.10925925925925922,
+            "adjusted_effect": -0.06960075744815516,
+            "crude_odds_ratio": 1.5935171385991058,
+            "adjusted_odds_ratio": 0.6469682112818721,
+            "cohens_d": null,
+            "p_adjusted_effect": 0.042004065598600135,
+            "p_heterogeneity": 0.01064185901195053,
+            "p_mix": 1.4122655039048576e-17,
+            "p_segment": 3.7117477701134244e-59,
+            "p_confounding": 1.4122655039048576e-17,
+            "q_confounding": 2.800993249411301e-16,
+            "q_heterogeneity": 0.030151933867193163,
+            "p_primary": 1.4122655039048576e-17,
+            "q_value": 2.800993249411301e-16,
+            "tests_run": 119,
+            "also_holds_for": [
+              "quartiles of Fare"
+            ],
+            "mix_cramers_v": 0.2859037677837427,
+            "reversed_share": 1.0,
+            "reversed_count": 2,
+            "stability": 0.99,
+            "strata": [
+              {
+                "level": "0",
+                "n_a": 80,
+                "n_b": 469,
+                "mean_a": 0.0375,
+                "mean_b": 0.16631130063965885,
+                "effect": -0.12881130063965884,
+                "weight": 68.3424408014572,
+                "reversed": true,
+                "share_of_a": 0.37037037037037035,
+                "share_of_b": 0.6948148148148148,
+                "events_a": 3,
+                "events_b": 78
+              },
+              {
+                "level": "1",
+                "n_a": 136,
+                "n_b": 206,
+                "mean_a": 0.6691176470588235,
+                "mean_b": 0.6893203883495146,
+                "effect": -0.020202741290691106,
+                "weight": 81.91812865497076,
+                "reversed": true,
+                "share_of_a": 0.6296296296296297,
+                "share_of_b": 0.30518518518518517,
+                "events_a": 91,
+                "events_b": 142
+              }
+            ],
+            "carrier_stratum": "1",
+            "z_reads_as_outcome": true,
+            "catchall_levels": [],
+            "catchall_share": 0.0,
+            "tertile_confirmed": null,
+            "thresholds": {
+              "n_min": 5,
+              "coverage_min": 0.8,
+              "binary_size_gate": 0.02,
+              "numeric_size_gate_d": 0.2,
+              "mix_gate_v": 0.1,
+              "attenuation_ratio": 0.5,
+              "majority_share": 0.6666666666666666,
+              "stability_full": 0.9,
+              "stability_majority": 0.8,
+              "fdr_q": 0.05,
+              "bootstrap_resamples": 300,
+              "seed": 20260913
+            }
+          },
+          "chart_spec": {
+            "kind": "strata_vs_aggregate",
+            "x": "Pclass",
+            "y": "Sex",
+            "z": "Survived"
+          }
+        },
+        "hypotheses": [
+          "segment_reversal.mix_is_the_story",
+          "segment_reversal.segment_chosen_before",
+          "segment_reversal.segment_is_a_consequence"
+        ],
+        "follow_ups": [
+          {
+            "query": "show_rows",
+            "params": {
+              "finding_id": "f_d41f41ca",
+              "description": "carrier_rows"
+            }
+          },
+          {
+            "query": "strata_rows",
+            "params": {
+              "x_column": "Pclass",
+              "x_level": "1",
+              "z_column": "Survived"
+            }
+          },
+          {
+            "query": "mediator_answer",
+            "params": {
+              "z_column": "Survived",
+              "x_column": "Pclass",
+              "options": [
+                "before",
+                "after",
+                "not_sure"
+              ]
+            }
+          }
+        ],
+        "reproduce": "In Excel: filter Survived to one value, then compute the share of rows where Sex = female for Pclass = 1 and for Pclass = rest. Repeat for each Survived value. Then remove the filter and compute both shares again."
+      },
+      {
+        "id": "f_35beb4ac",
+        "detector": "segment_reversal",
+        "detector_version": "1.0.0",
+        "severity": "medium",
+        "confidence": "statistical",
+        "title_key": "segment_reversal.attenuation",
+        "slots": {
+          "x_column": "Embarked",
+          "a": "S",
+          "b": "C",
+          "y_column": "Sex",
+          "event": "female",
+          "z_column": "Survived",
+          "grade": "ATTENUATION",
+          "grade_all_rows": "ATTENUATION",
+          "agg_a": "31.5%",
+          "agg_b": "43.5%",
+          "agg_gap": "-11.9 points",
+          "adjusted_gap": "-0.8 points",
+          "adjusted_p": "0.8261",
+          "strata_count": "2",
+          "reversed_count": "1",
+          "coverage": "100%",
+          "tests_run": "119",
+          "q_value": "< 0.0001",
+          "mix_v": "0.18",
+          "rank": "7",
+          "display": "also_found",
+          "agg_a_k_of_n": "203 of 644",
+          "agg_b_k_of_n": "73 of 168",
+          "crude_or": "0.599",
+          "adjusted_or": "0.953"
+        },
+        "evidence": {
+          "row_indices": "<427 indices omitted>",
+          "row_count": 427,
+          "columns": [
+            "Embarked",
+            "Sex",
+            "Survived"
+          ],
+          "aggregates": {
+            "grade": "ATTENUATION",
+            "grade_all_rows": "ATTENUATION",
+            "reason": "the gap mostly disappears once the segment is held constant",
+            "n_valid": 812,
+            "n_qualifying": 812,
+            "coverage": 1.0,
+            "n_a": 644,
+            "n_b": 168,
+            "mean_a": 0.31521739130434784,
+            "mean_b": 0.43452380952380953,
+            "events_a": 203,
+            "events_b": 73,
+            "aggregate_effect": -0.1193064182194617,
+            "adjusted_effect": -0.008092085334718111,
+            "crude_odds_ratio": 0.599043270276147,
+            "adjusted_odds_ratio": 0.9534833336008088,
+            "cohens_d": null,
+            "p_adjusted_effect": 0.8261436719411408,
+            "p_heterogeneity": 0.3503696895386704,
+            "p_mix": 2.6506912068551484e-07,
+            "p_segment": 3.957138289244754e-51,
+            "p_confounding": 2.6506912068551484e-07,
+            "q_confounding": 8.525196043669262e-07,
+            "q_heterogeneity": 0.4531955766858889,
+            "p_primary": 2.6506912068551484e-07,
+            "q_value": 8.525196043669262e-07,
+            "tests_run": 119,
+            "also_holds_for": [
+              "Survived (S vs rest)",
+              "quartiles of Fare"
+            ],
+            "mix_cramers_v": 0.18061474791496382,
+            "reversed_share": 0.6182266009852216,
+            "reversed_count": 1,
+            "stability": null,
+            "strata": [
+              {
+                "level": "0",
+                "n_a": 427,
+                "n_b": 75,
+                "mean_a": 0.14754098360655737,
+                "mean_b": 0.12,
+                "effect": 0.02754098360655738,
+                "weight": 63.79482071713147,
+                "reversed": true,
+                "share_of_a": 0.6630434782608695,
+                "share_of_b": 0.44642857142857145,
+                "events_a": 63,
+                "events_b": 9
+              },
+              {
+                "level": "1",
+                "n_a": 217,
+                "n_b": 93,
+                "mean_a": 0.6451612903225806,
+                "mean_b": 0.6881720430107527,
+                "effect": -0.043010752688172116,
+                "weight": 65.1,
+                "reversed": false,
+                "share_of_a": 0.33695652173913043,
+                "share_of_b": 0.5535714285714286,
+                "events_a": 140,
+                "events_b": 64
+              }
+            ],
+            "carrier_stratum": "0",
+            "z_reads_as_outcome": true,
+            "catchall_levels": [],
+            "catchall_share": 0.0,
+            "tertile_confirmed": null,
+            "thresholds": {
+              "n_min": 5,
+              "coverage_min": 0.8,
+              "binary_size_gate": 0.02,
+              "numeric_size_gate_d": 0.2,
+              "mix_gate_v": 0.1,
+              "attenuation_ratio": 0.5,
+              "majority_share": 0.6666666666666666,
+              "stability_full": 0.9,
+              "stability_majority": 0.8,
+              "fdr_q": 0.05,
+              "bootstrap_resamples": 300,
+              "seed": 20260913
+            }
+          },
+          "chart_spec": {
+            "kind": "strata_vs_aggregate",
+            "x": "Embarked",
+            "y": "Sex",
+            "z": "Survived"
+          }
+        },
+        "hypotheses": [
+          "segment_reversal.mix_is_the_story",
+          "segment_reversal.segment_chosen_before",
+          "segment_reversal.segment_is_a_consequence"
+        ],
+        "follow_ups": [
+          {
+            "query": "show_rows",
+            "params": {
+              "finding_id": "f_35beb4ac",
+              "description": "carrier_rows"
+            }
+          },
+          {
+            "query": "strata_rows",
+            "params": {
+              "x_column": "Embarked",
+              "x_level": "S",
+              "z_column": "Survived"
+            }
+          },
+          {
+            "query": "mediator_answer",
+            "params": {
+              "z_column": "Survived",
+              "x_column": "Embarked",
+              "options": [
+                "before",
+                "after",
+                "not_sure"
+              ]
+            }
+          }
+        ],
+        "reproduce": "In Excel: filter Survived to one value, then compute the share of rows where Sex = female for Embarked = S and for Embarked = C. Repeat for each Survived value. Then remove the filter and compute both shares again."
+      },
+      {
+        "id": "f_8be01435",
+        "detector": "segment_reversal",
+        "detector_version": "1.0.0",
+        "severity": "low",
+        "confidence": "statistical",
+        "title_key": "segment_reversal.interaction",
+        "slots": {
+          "x_column": "Pclass",
+          "a": "3",
+          "b": "rest",
+          "y_column": "Fare",
+          "event": "Fare",
+          "z_column": "Survived",
+          "grade": "INTERACTION",
+          "grade_all_rows": "INTERACTION",
+          "agg_a": "13.676",
+          "agg_b": "54.948",
+          "agg_gap": "-41.3 Fare",
+          "adjusted_gap": "-36.8 Fare",
+          "adjusted_p": "< 0.0001",
+          "strata_count": "2",
+          "reversed_count": "0",
+          "coverage": "100%",
+          "tests_run": "119",
+          "q_value": "0.0002",
+          "mix_v": "0.32",
+          "rank": "8",
+          "display": "also_found",
+          "cohens_d": "-0.91"
+        },
+        "evidence": {
+          "row_indices": "<372 indices omitted>",
+          "row_count": 372,
+          "columns": [
+            "Pclass",
+            "Fare",
+            "Survived"
+          ],
+          "aggregates": {
+            "grade": "INTERACTION",
+            "grade_all_rows": "INTERACTION",
+            "reason": "same direction everywhere but the size of the gap differs by segment",
+            "n_valid": 891,
+            "n_qualifying": 891,
+            "coverage": 1.0,
+            "n_a": 491,
+            "n_b": 400,
+            "mean_a": 13.675550101832993,
+            "mean_b": 54.9481355,
+            "events_a": null,
+            "events_b": null,
+            "aggregate_effect": -41.27258539816701,
+            "adjusted_effect": -36.81610994894475,
+            "crude_odds_ratio": null,
+            "adjusted_odds_ratio": null,
+            "cohens_d": -0.9115918028949653,
+            "p_adjusted_effect": 8.166319480991874e-29,
+            "p_heterogeneity": 3.286095268122063e-05,
+            "p_mix": 6.533193131268521e-22,
+            "p_segment": 6.120189341924269e-15,
+            "p_confounding": 6.120189341924269e-15,
+            "q_confounding": 5.202160940635629e-14,
+            "q_heterogeneity": 0.0002444033355665784,
+            "p_primary": 3.286095268122063e-05,
+            "q_value": 0.0002444033355665784,
+            "tests_run": 119,
+            "also_holds_for": [
+              "Embarked",
+              "Survived (2 vs rest)",
+              "Sex"
+            ],
+            "mix_cramers_v": 0.32230835737297003,
+            "reversed_share": 0.0,
+            "reversed_count": 0,
+            "stability": null,
+            "strata": [
+              {
+                "level": "0",
+                "n_a": 372,
+                "n_b": 177,
+                "mean_a": 13.66936424731183,
+                "mean_b": 39.87410395480228,
+                "effect": -26.20473970749045,
+                "weight": 119.93442622950819,
+                "reversed": false,
+                "share_of_a": 0.7576374745417516,
+                "share_of_b": 0.4425
+              },
+              {
+                "level": "1",
+                "n_a": 119,
+                "n_b": 223,
+                "mean_a": 13.694887394957966,
+                "mean_b": 66.91272556053809,
+                "effect": -53.217838165580126,
+                "weight": 77.59356725146199,
+                "reversed": false,
+                "share_of_a": 0.24236252545824846,
+                "share_of_b": 0.5575
+              }
+            ],
+            "carrier_stratum": "0",
+            "z_reads_as_outcome": true,
+            "catchall_levels": [],
+            "catchall_share": 0.0,
+            "tertile_confirmed": null,
+            "thresholds": {
+              "n_min": 5,
+              "coverage_min": 0.8,
+              "binary_size_gate": 0.02,
+              "numeric_size_gate_d": 0.2,
+              "mix_gate_v": 0.1,
+              "attenuation_ratio": 0.5,
+              "majority_share": 0.6666666666666666,
+              "stability_full": 0.9,
+              "stability_majority": 0.8,
+              "fdr_q": 0.05,
+              "bootstrap_resamples": 300,
+              "seed": 20260913
+            }
+          },
+          "chart_spec": {
+            "kind": "strata_vs_aggregate",
+            "x": "Pclass",
+            "y": "Fare",
+            "z": "Survived"
+          }
+        },
+        "hypotheses": [
+          "segment_reversal.effect_size_varies_by_segment"
+        ],
+        "follow_ups": [
+          {
+            "query": "show_rows",
+            "params": {
+              "finding_id": "f_8be01435",
+              "description": "carrier_rows"
+            }
+          },
+          {
+            "query": "strata_rows",
+            "params": {
+              "x_column": "Pclass",
+              "x_level": "3",
+              "z_column": "Survived"
+            }
+          },
+          {
+            "query": "mediator_answer",
+            "params": {
+              "z_column": "Survived",
+              "x_column": "Pclass",
+              "options": [
+                "before",
+                "after",
+                "not_sure"
+              ]
+            }
+          }
+        ],
+        "reproduce": "In Excel: filter Survived to one value, then average Fare for Pclass = 3 and for Pclass = rest. Repeat for each Survived value. Then remove the filter and average again."
+      },
+      {
+        "id": "f_1872f767",
+        "detector": "segment_reversal",
+        "detector_version": "1.0.0",
+        "severity": "low",
+        "confidence": "statistical",
+        "title_key": "segment_reversal.interaction",
+        "slots": {
+          "x_column": "Pclass",
+          "a": "3",
+          "b": "rest",
+          "y_column": "Survived",
+          "event": "1",
+          "z_column": "quartiles of Fare",
+          "grade": "INTERACTION",
+          "grade_all_rows": "INTERACTION",
+          "agg_a": "24.2%",
+          "agg_b": "55.8%",
+          "agg_gap": "-31.5 points",
+          "adjusted_gap": "-22.4 points",
+          "adjusted_p": "< 0.0001",
+          "strata_count": "4",
+          "reversed_count": "1",
+          "coverage": "100%",
+          "tests_run": "119",
+          "q_value": "0.0026",
+          "mix_v": "0.55",
+          "rank": "9",
+          "display": "also_found",
+          "agg_a_k_of_n": "119 of 491",
+          "agg_b_k_of_n": "223 of 400",
+          "crude_or": "0.254",
+          "adjusted_or": "0.372"
+        },
+        "evidence": {
+          "row_indices": "<211 indices omitted>",
+          "row_count": 211,
+          "columns": [
+            "Pclass",
+            "Survived",
+            "Fare"
+          ],
+          "aggregates": {
+            "grade": "INTERACTION",
+            "grade_all_rows": "INTERACTION",
+            "reason": "some segments point the other way, though the adjusted direction holds",
+            "n_valid": 891,
+            "n_qualifying": 891,
+            "coverage": 1.0,
+            "n_a": 491,
+            "n_b": 400,
+            "mean_a": 0.24236252545824846,
+            "mean_b": 0.5575,
+            "events_a": 119,
+            "events_b": 223,
+            "aggregate_effect": -0.31513747454175156,
+            "adjusted_effect": -0.22445551947185483,
+            "crude_odds_ratio": 0.25390568494141474,
+            "adjusted_odds_ratio": 0.37187158937518655,
+            "cohens_d": null,
+            "p_adjusted_effect": 6.538867129706511e-09,
+            "p_heterogeneity": 0.0005955717660787665,
+            "p_mix": 5.959787853272971e-59,
+            "p_segment": 2.816616687453629e-17,
+            "p_confounding": 2.816616687453629e-17,
+            "q_confounding": 4.189717322587273e-16,
+            "q_heterogeneity": 0.002624927413458267,
+            "p_primary": 0.0005955717660787665,
+            "q_value": 0.002624927413458267,
+            "tests_run": 119,
+            "also_holds_for": [
+              "quartiles of Fare (3 vs 1)",
+              "Sex"
+            ],
+            "mix_cramers_v": 0.5538369795418683,
+            "reversed_share": 0.250280583613917,
+            "reversed_count": 1,
+            "stability": null,
+            "strata": [
+              {
+                "level": "0 to 7.91 of Fare",
+                "n_a": 211,
+                "n_b": 12,
+                "mean_a": 0.20853080568720378,
+                "mean_b": 0.0,
+                "effect": 0.20853080568720378,
+                "weight": 11.354260089686099,
+                "reversed": true,
+                "share_of_a": 0.42973523421588594,
+                "share_of_b": 0.03,
+                "events_a": 44,
+                "events_b": 0
+              },
+              {
+                "level": "7.91 to 14.45 of Fare",
+                "n_a": 138,
+                "n_b": 86,
+                "mean_a": 0.2536231884057971,
+                "mean_b": 0.38372093023255816,
+                "effect": -0.13009774182676104,
+                "weight": 52.982142857142854,
+                "reversed": false,
+                "share_of_a": 0.28105906313645623,
+                "share_of_b": 0.215,
+                "events_a": 35,
+                "events_b": 33
+              },
+              {
+                "level": "14.45 to 31 of Fare",
+                "n_a": 101,
+                "n_b": 121,
+                "mean_a": 0.31683168316831684,
+                "mean_b": 0.5702479338842975,
+                "effect": -0.2534162507159807,
+                "weight": 55.049549549549546,
+                "reversed": false,
+                "share_of_a": 0.20570264765784113,
+                "share_of_b": 0.3025,
+                "events_a": 32,
+                "events_b": 69
+              },
+              {
+                "level": "31 to 512.33 of Fare",
+                "n_a": 41,
+                "n_b": 181,
+                "mean_a": 0.1951219512195122,
+                "mean_b": 0.6685082872928176,
+                "effect": -0.47338633607330544,
+                "weight": 33.427927927927925,
+                "reversed": false,
+                "share_of_a": 0.0835030549898167,
+                "share_of_b": 0.4525,
+                "events_a": 8,
+                "events_b": 121
+              }
+            ],
+            "carrier_stratum": "0 to 7.91 of Fare",
+            "z_reads_as_outcome": false,
+            "catchall_levels": [],
+            "catchall_share": 0.0,
+            "tertile_confirmed": null,
+            "thresholds": {
+              "n_min": 5,
+              "coverage_min": 0.8,
+              "binary_size_gate": 0.02,
+              "numeric_size_gate_d": 0.2,
+              "mix_gate_v": 0.1,
+              "attenuation_ratio": 0.5,
+              "majority_share": 0.6666666666666666,
+              "stability_full": 0.9,
+              "stability_majority": 0.8,
+              "fdr_q": 0.05,
+              "bootstrap_resamples": 300,
+              "seed": 20260913
+            }
+          },
+          "chart_spec": {
+            "kind": "strata_vs_aggregate",
+            "x": "Pclass",
+            "y": "Survived",
+            "z": "Fare"
+          }
+        },
+        "hypotheses": [
+          "segment_reversal.effect_size_varies_by_segment"
+        ],
+        "follow_ups": [
+          {
+            "query": "show_rows",
+            "params": {
+              "finding_id": "f_1872f767",
+              "description": "carrier_rows"
+            }
+          },
+          {
+            "query": "strata_rows",
+            "params": {
+              "x_column": "Pclass",
+              "x_level": "3",
+              "z_column": "Fare"
+            }
+          },
+          {
+            "query": "mediator_answer",
+            "params": {
+              "z_column": "Fare",
+              "x_column": "Pclass",
+              "options": [
+                "before",
+                "after",
+                "not_sure"
+              ]
+            }
+          }
+        ],
+        "reproduce": "In Excel: filter Fare to one value, then compute the share of rows where Survived = 1 for Pclass = 3 and for Pclass = rest. Repeat for each Fare value. Then remove the filter and compute both shares again."
+      },
+      {
+        "id": "f_98fd99df",
+        "detector": "segment_reversal",
+        "detector_version": "1.0.0",
+        "severity": "low",
+        "confidence": "statistical",
+        "title_key": "segment_reversal.interaction",
+        "slots": {
+          "x_column": "Sex",
+          "a": "male",
+          "b": "female",
+          "y_column": "Survived",
+          "event": "1",
+          "z_column": "Pclass",
+          "grade": "INTERACTION",
+          "grade_all_rows": "INTERACTION",
+          "agg_a": "18.9%",
+          "agg_b": "74.2%",
+          "agg_gap": "-55.3 points",
+          "adjusted_gap": "-51.6 points",
+          "adjusted_p": "< 0.0001",
+          "strata_count": "3",
+          "reversed_count": "0",
+          "coverage": "100%",
+          "tests_run": "119",
+          "q_value": "< 0.0001",
+          "mix_v": "0.14",
+          "rank": "10",
+          "display": "also_found",
+          "agg_a_k_of_n": "109 of 577",
+          "agg_b_k_of_n": "233 of 314",
+          "crude_or": "0.081",
+          "adjusted_or": "0.073"
+        },
+        "evidence": {
+          "row_indices": "<347 indices omitted>",
+          "row_count": 347,
+          "columns": [
+            "Sex",
+            "Survived",
+            "Pclass"
+          ],
+          "aggregates": {
+            "grade": "INTERACTION",
+            "grade_all_rows": "INTERACTION",
+            "reason": "same direction everywhere but the size of the gap differs by segment",
+            "n_valid": 891,
+            "n_qualifying": 891,
+            "coverage": 1.0,
+            "n_a": 577,
+            "n_b": 314,
+            "mean_a": 0.18890814558058924,
+            "mean_b": 0.7420382165605095,
+            "events_a": 109,
+            "events_b": 233,
+            "aggregate_effect": -0.5531300709799203,
+            "adjusted_effect": -0.516269556959211,
+            "crude_odds_ratio": 0.08096731594585672,
+            "adjusted_odds_ratio": 0.07268181186265404,
+            "cohens_d": null,
+            "p_adjusted_effect": 2.0745064547816862e-56,
+            "p_heterogeneity": 1.7641049532952798e-06,
+            "p_mix": 0.0002063886434823315,
+            "p_segment": 4.5492517112987275e-23,
+            "p_confounding": 0.0002063886434823315,
+            "q_confounding": 0.000491204971487949,
+            "q_heterogeneity": 2.0992848944213828e-05,
+            "p_primary": 1.7641049532952798e-06,
+            "q_value": 2.0992848944213828e-05,
+            "tests_run": 119,
+            "also_holds_for": [],
+            "mix_cramers_v": 0.13801339862213946,
+            "reversed_share": 0.0,
+            "reversed_count": 0,
+            "stability": null,
+            "strata": [
+              {
+                "level": "3",
+                "n_a": 347,
+                "n_b": 144,
+                "mean_a": 0.13544668587896252,
+                "mean_b": 0.5,
+                "effect": -0.3645533141210375,
+                "weight": 101.76782077393075,
+                "reversed": false,
+                "share_of_a": 0.6013864818024264,
+                "share_of_b": 0.4585987261146497,
+                "events_a": 47,
+                "events_b": 72
+              },
+              {
+                "level": "1",
+                "n_a": 122,
+                "n_b": 94,
+                "mean_a": 0.36885245901639346,
+                "mean_b": 0.9680851063829787,
+                "effect": -0.5992326473665852,
+                "weight": 53.092592592592595,
+                "reversed": false,
+                "share_of_a": 0.21143847487001732,
+                "share_of_b": 0.29936305732484075,
+                "events_a": 45,
+                "events_b": 91
+              },
+              {
+                "level": "2",
+                "n_a": 108,
+                "n_b": 76,
+                "mean_a": 0.1574074074074074,
+                "mean_b": 0.9210526315789473,
+                "effect": -0.7636452241715399,
+                "weight": 44.608695652173914,
+                "reversed": false,
+                "share_of_a": 0.18717504332755633,
+                "share_of_b": 0.24203821656050956,
+                "events_a": 17,
+                "events_b": 70
+              }
+            ],
+            "carrier_stratum": "3",
+            "z_reads_as_outcome": false,
+            "catchall_levels": [],
+            "catchall_share": 0.0,
+            "tertile_confirmed": null,
+            "thresholds": {
+              "n_min": 5,
+              "coverage_min": 0.8,
+              "binary_size_gate": 0.02,
+              "numeric_size_gate_d": 0.2,
+              "mix_gate_v": 0.1,
+              "attenuation_ratio": 0.5,
+              "majority_share": 0.6666666666666666,
+              "stability_full": 0.9,
+              "stability_majority": 0.8,
+              "fdr_q": 0.05,
+              "bootstrap_resamples": 300,
+              "seed": 20260913
+            }
+          },
+          "chart_spec": {
+            "kind": "strata_vs_aggregate",
+            "x": "Sex",
+            "y": "Survived",
+            "z": "Pclass"
+          }
+        },
+        "hypotheses": [
+          "segment_reversal.effect_size_varies_by_segment"
+        ],
+        "follow_ups": [
+          {
+            "query": "show_rows",
+            "params": {
+              "finding_id": "f_98fd99df",
+              "description": "carrier_rows"
+            }
+          },
+          {
+            "query": "strata_rows",
+            "params": {
+              "x_column": "Sex",
+              "x_level": "male",
+              "z_column": "Pclass"
+            }
+          },
+          {
+            "query": "mediator_answer",
+            "params": {
+              "z_column": "Pclass",
+              "x_column": "Sex",
+              "options": [
+                "before",
+                "after",
+                "not_sure"
+              ]
+            }
+          }
+        ],
+        "reproduce": "In Excel: filter Pclass to one value, then compute the share of rows where Survived = 1 for Sex = male and for Sex = female. Repeat for each Pclass value. Then remove the filter and compute both shares again."
+      },
+      {
+        "id": "f_bdf84aea",
+        "detector": "segment_reversal",
+        "detector_version": "1.0.0",
+        "severity": "low",
+        "confidence": "statistical",
+        "title_key": "segment_reversal.interaction",
+        "slots": {
+          "x_column": "Embarked",
+          "a": "Q",
+          "b": "rest",
+          "y_column": "Parch",
+          "event": "Parch",
+          "z_column": "Survived",
+          "grade": "INTERACTION",
+          "grade_all_rows": "INTERACTION",
+          "agg_a": "0.169",
+          "agg_b": "0.403",
+          "agg_gap": "-0.234 Parch",
+          "adjusted_gap": "-0.235 Parch",
+          "adjusted_p": "0.0142",
+          "strata_count": "2",
+          "reversed_count": "0",
+          "coverage": "100%",
+          "tests_run": "119",
+          "q_value": "0.0494",
+          "mix_v": "0.00",
+          "rank": "11",
+          "display": "also_found",
+          "cohens_d": "-0.29"
+        },
+        "evidence": {
+          "row_indices": "<30 indices omitted>",
+          "row_count": 30,
+          "columns": [
+            "Embarked",
+            "Parch",
+            "Survived"
+          ],
+          "aggregates": {
+            "grade": "INTERACTION",
+            "grade_all_rows": "INTERACTION",
+            "reason": "same direction everywhere but the size of the gap differs by segment",
+            "n_valid": 889,
+            "n_qualifying": 889,
+            "coverage": 1.0,
+            "n_a": 77,
+            "n_b": 812,
+            "mean_a": 0.16883116883116883,
+            "mean_b": 0.4027093596059113,
+            "events_a": null,
+            "events_b": null,
+            "aggregate_effect": -0.23387819077474248,
+            "adjusted_effect": -0.23496419011461295,
+            "crude_odds_ratio": null,
+            "adjusted_odds_ratio": null,
+            "cohens_d": -0.2907036515751011,
+            "p_adjusted_effect": 0.014220844795069841,
+            "p_heterogeneity": 0.020353738032065565,
+            "p_mix": 0.892423897137347,
+            "p_segment": 0.01313676620109496,
+            "p_confounding": 0.892423897137347,
+            "q_confounding": 0.892423897137347,
+            "q_heterogeneity": 0.04943050664930209,
+            "p_primary": 0.020353738032065565,
+            "q_value": 0.04943050664930209,
+            "tests_run": 119,
+            "also_holds_for": [],
+            "mix_cramers_v": 0.004535728723985681,
+            "reversed_share": 0.0,
+            "reversed_count": 0,
+            "stability": null,
+            "strata": [
+              {
+                "level": "0",
+                "n_a": 47,
+                "n_b": 502,
+                "mean_a": 0.2765957446808511,
+                "mean_b": 0.3346613545816733,
+                "effect": -0.05806560990082221,
+                "weight": 42.97632058287796,
+                "reversed": false,
+                "share_of_a": 0.6103896103896104,
+                "share_of_b": 0.6182266009852216
+              },
+              {
+                "level": "1",
+                "n_a": 30,
+                "n_b": 310,
+                "mean_a": 0.0,
+                "mean_b": 0.5129032258064516,
+                "effect": -0.5129032258064516,
+                "weight": 27.352941176470587,
+                "reversed": false,
+                "share_of_a": 0.38961038961038963,
+                "share_of_b": 0.3817733990147783
+              }
+            ],
+            "carrier_stratum": "1",
+            "z_reads_as_outcome": true,
+            "catchall_levels": [],
+            "catchall_share": 0.0,
+            "tertile_confirmed": null,
+            "thresholds": {
+              "n_min": 5,
+              "coverage_min": 0.8,
+              "binary_size_gate": 0.02,
+              "numeric_size_gate_d": 0.2,
+              "mix_gate_v": 0.1,
+              "attenuation_ratio": 0.5,
+              "majority_share": 0.6666666666666666,
+              "stability_full": 0.9,
+              "stability_majority": 0.8,
+              "fdr_q": 0.05,
+              "bootstrap_resamples": 300,
+              "seed": 20260913
+            }
+          },
+          "chart_spec": {
+            "kind": "strata_vs_aggregate",
+            "x": "Embarked",
+            "y": "Parch",
+            "z": "Survived"
+          }
+        },
+        "hypotheses": [
+          "segment_reversal.effect_size_varies_by_segment"
+        ],
+        "follow_ups": [
+          {
+            "query": "show_rows",
+            "params": {
+              "finding_id": "f_bdf84aea",
+              "description": "carrier_rows"
+            }
+          },
+          {
+            "query": "strata_rows",
+            "params": {
+              "x_column": "Embarked",
+              "x_level": "Q",
+              "z_column": "Survived"
+            }
+          },
+          {
+            "query": "mediator_answer",
+            "params": {
+              "z_column": "Survived",
+              "x_column": "Embarked",
+              "options": [
+                "before",
+                "after",
+                "not_sure"
+              ]
+            }
+          }
+        ],
+        "reproduce": "In Excel: filter Survived to one value, then average Parch for Embarked = Q and for Embarked = rest. Repeat for each Survived value. Then remove the filter and average again."
+      },
+      {
+        "id": "f_b4944b05",
+        "detector": "segment_reversal",
+        "detector_version": "1.0.0",
+        "severity": "low",
+        "confidence": "statistical",
+        "title_key": "segment_reversal.interaction",
+        "slots": {
+          "x_column": "Embarked",
+          "a": "S",
+          "b": "rest",
+          "y_column": "Survived",
+          "event": "1",
+          "z_column": "quartiles of Fare",
+          "grade": "INTERACTION",
+          "grade_all_rows": "INTERACTION",
+          "agg_a": "33.7%",
+          "agg_b": "50.2%",
+          "agg_gap": "-16.5 points",
+          "adjusted_gap": "-16.6 points",
+          "adjusted_p": "< 0.0001",
+          "strata_count": "4",
+          "reversed_count": "1",
+          "coverage": "100%",
+          "tests_run": "119",
+          "q_value": "0.0369",
+          "mix_v": "0.24",
+          "rank": "12",
+          "display": "also_found",
+          "agg_a_k_of_n": "217 of 644",
+          "agg_b_k_of_n": "123 of 245",
+          "crude_or": "0.504",
+          "adjusted_or": "0.469"
+        },
+        "evidence": {
+          "row_indices": "<200 indices omitted>",
+          "row_count": 200,
+          "columns": [
+            "Embarked",
+            "Survived",
+            "Fare"
+          ],
+          "aggregates": {
+            "grade": "INTERACTION",
+            "grade_all_rows": "INTERACTION",
+            "reason": "some segments point the other way, though the adjusted direction holds",
+            "n_valid": 889,
+            "n_qualifying": 889,
+            "coverage": 1.0,
+            "n_a": 644,
+            "n_b": 245,
+            "mean_a": 0.33695652173913043,
+            "mean_b": 0.5020408163265306,
+            "events_a": 217,
+            "events_b": 123,
+            "aggregate_effect": -0.1650842945874002,
+            "adjusted_effect": -0.16575062708627492,
+            "crude_odds_ratio": 0.5040650406504065,
+            "adjusted_odds_ratio": 0.46914275208748135,
+            "cohens_d": null,
+            "p_adjusted_effect": 3.700344580994717e-06,
+            "p_heterogeneity": 0.014541142219164043,
+            "p_mix": 9.267085513114353e-11,
+            "p_segment": 6.245892233251495e-17,
+            "p_confounding": 9.267085513114353e-11,
+            "q_confounding": 4.0843821335578073e-10,
+            "q_heterogeneity": 0.036858707024300295,
+            "p_primary": 0.014541142219164043,
+            "q_value": 0.036858707024300295,
+            "tests_run": 119,
+            "also_holds_for": [],
+            "mix_cramers_v": 0.23643727437143816,
+            "reversed_share": 0.24971878515185603,
+            "reversed_count": 1,
+            "stability": null,
+            "strata": [
+              {
+                "level": "0 to 7.91 of Fare",
+                "n_a": 138,
+                "n_b": 85,
+                "mean_a": 0.11594202898550725,
+                "mean_b": 0.32941176470588235,
+                "effect": -0.2134697357203751,
+                "weight": 52.600896860986545,
+                "reversed": false,
+                "share_of_a": 0.21428571428571427,
+                "share_of_b": 0.3469387755102041,
+                "events_a": 16,
+                "events_b": 28
+              },
+              {
+                "level": "7.91 to 14.45 of Fare",
+                "n_a": 200,
+                "n_b": 24,
+                "mean_a": 0.28,
+                "mean_b": 0.5,
+                "effect": -0.21999999999999997,
+                "weight": 21.428571428571427,
+                "reversed": false,
+                "share_of_a": 0.3105590062111801,
+                "share_of_b": 0.09795918367346938,
+                "events_a": 56,
+                "events_b": 12
+              },
+              {
+                "level": "14.45 to 31 of Fare",
+                "n_a": 162,
+                "n_b": 60,
+                "mean_a": 0.4567901234567901,
+                "mean_b": 0.45,
+                "effect": 0.006790123456790087,
+                "weight": 43.78378378378378,
+                "reversed": true,
+                "share_of_a": 0.2515527950310559,
+                "share_of_b": 0.24489795918367346,
+                "events_a": 74,
+                "events_b": 27
+              },
+              {
+                "level": "31 to 512.33 of Fare",
+                "n_a": 144,
+                "n_b": 76,
+                "mean_a": 0.4930555555555556,
+                "mean_b": 0.7368421052631579,
+                "effect": -0.24378654970760227,
+                "weight": 49.74545454545454,
+                "reversed": false,
+                "share_of_a": 0.2236024844720497,
+                "share_of_b": 0.31020408163265306,
+                "events_a": 71,
+                "events_b": 56
+              }
+            ],
+            "carrier_stratum": "7.91 to 14.45 of Fare",
+            "z_reads_as_outcome": false,
+            "catchall_levels": [],
+            "catchall_share": 0.0,
+            "tertile_confirmed": null,
+            "thresholds": {
+              "n_min": 5,
+              "coverage_min": 0.8,
+              "binary_size_gate": 0.02,
+              "numeric_size_gate_d": 0.2,
+              "mix_gate_v": 0.1,
+              "attenuation_ratio": 0.5,
+              "majority_share": 0.6666666666666666,
+              "stability_full": 0.9,
+              "stability_majority": 0.8,
+              "fdr_q": 0.05,
+              "bootstrap_resamples": 300,
+              "seed": 20260913
+            }
+          },
+          "chart_spec": {
+            "kind": "strata_vs_aggregate",
+            "x": "Embarked",
+            "y": "Survived",
+            "z": "Fare"
+          }
+        },
+        "hypotheses": [
+          "segment_reversal.effect_size_varies_by_segment"
+        ],
+        "follow_ups": [
+          {
+            "query": "show_rows",
+            "params": {
+              "finding_id": "f_b4944b05",
+              "description": "carrier_rows"
+            }
+          },
+          {
+            "query": "strata_rows",
+            "params": {
+              "x_column": "Embarked",
+              "x_level": "S",
+              "z_column": "Fare"
+            }
+          },
+          {
+            "query": "mediator_answer",
+            "params": {
+              "z_column": "Fare",
+              "x_column": "Embarked",
+              "options": [
+                "before",
+                "after",
+                "not_sure"
+              ]
+            }
+          }
+        ],
+        "reproduce": "In Excel: filter Fare to one value, then compute the share of rows where Survived = 1 for Embarked = S and for Embarked = rest. Repeat for each Fare value. Then remove the filter and compute both shares again."
+      }
+    ]
+  }
+}

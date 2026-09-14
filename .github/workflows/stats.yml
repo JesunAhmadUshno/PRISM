@@ -60,6 +60,16 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-dev.txt
 
+      # The detector suite runs on real public files (tests/python/golden.py)
+      # that are downloaded on first use and SHA-256 verified. Cache them so a
+      # flaky host does not fail the gate; the digest check still runs on the
+      # cached bytes, so a stale or altered cache cannot pass silently.
+      - name: Cache golden datasets
+        uses: actions/cache@v4
+        with:
+          path: tests/python/fixtures/golden
+          key: golden-431abcb3-4a437fde
+
       - name: Report the versions the expected values were checked against
         run: |
           python --version
