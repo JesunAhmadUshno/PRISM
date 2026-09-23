@@ -491,13 +491,41 @@ def merge_datasets(datasets, links):
             df_id = list(dfs.keys())[0]
             merged_df = dfs[df_id]['df']
         elif len(links) == 0:
-            # Multiple datasets but no links - concatenate vertically if same columns
-            all_dfs = [dfs[k]['df'] for k in dfs]
-            try:
-                merged_df = pd.concat(all_dfs, ignore_index=True)
-            except Exception:
-                # Different schemas - just use first dataset
-                merged_df = all_dfs[0]
+            # Stacking unlinked files only means something when they share a
+            # schema, e.g. Q1 and Q2 of the same ledger. Enforce that here:
+            # pd.concat does NOT raise on mismatched columns, it unions them and
+            # fills the gaps with NaN, so the old try/except never fired and two
+            # unrelated files came back as a block-diagonal frame that
+            # analyze_csv then reported on as though it were one dataset.
+            ordered_ids = list(dfs.keys())
+            all_dfs = [dfs[k]['df'] for k in ordered_ids]
+            base_columns = set(all_dfs[0].columns)
+            mismatched = [
+                ordered_ids[i] for i, d in enumerate(all_dfs)
+                if set(d.columns) != base_columns
+            ]
+            if mismatched:
+                first_name = dfs[ordered_ids[0]]['name']
+                other_name = dfs[mismatched[0]]['name']
+                other_columns = set(dfs[mismatched[0]]['df'].columns)
+                only_in_first = sorted(base_columns - other_columns)
+                only_in_other = sorted(other_columns - base_columns)
+                detail = []
+                if only_in_first:
+                    detail.append("'" + first_name + "' has " + ', '.join(only_in_first))
+                if only_in_other:
+                    detail.append("'" + other_name + "' has " + ', '.join(only_in_other))
+                return json.dumps({
+                    "success": False,
+                    "error": (
+                        "Cannot combine these files without a link. Stacking rows only "
+                        "works when every file has the same columns, but "
+                        + ' and '.join(detail) + ". "
+                        "Define a link between the columns that identify the same record "
+                        "in each file, or upload files that share a schema."
+                    )
+                })
+            merged_df = pd.concat(all_dfs, ignore_index=True)
         else:
             # Apply links sequentially
             first_link = links[0]
@@ -1059,10 +1087,28 @@ def run_preprocessing(data, operations, columns=None):
                             df[col] = (df[col] - mean_val) / std_val
             
             elif op == 'log_transform':
+                # clip(lower=0) used to turn every negative value into 0, so on a
+                # ledger each refund, credit and reversal silently became zero:
+                # same row count, no warning, and every downstream mean, total and
+                # test computed on numbers that were never in the file. log1p is
+                # undefined below -1, so refuse and say which column, the way the
+                # two-group tests refuse a column with three groups.
                 for col in numeric_cols:
                     if col in target_cols:
-                        # Add small constant to handle zeros
-                        df[col] = np.log1p(df[col].clip(lower=0))
+                        negatives = int((df[col] < 0).sum())
+                        if negatives > 0:
+                            return json.dumps({
+                                "success": False,
+                                "error": (
+                                    "Cannot log-transform '" + str(col) + "': it has "
+                                    + format(negatives, ',') + " negative value(s) and a "
+                                    "logarithm is undefined for them. Filter or shift the "
+                                    "column first, or drop it from the selection - the "
+                                    "previous behaviour replaced every negative with zero "
+                                    "without saying so."
+                                )
+                            })
+                        df[col] = np.log1p(df[col])
             
             elif op == 'remove_outliers':
                 for col in numeric_cols:
@@ -1074,7 +1120,13 @@ def run_preprocessing(data, operations, columns=None):
             elif op == 'encode_categorical':
                 cat_cols = df[target_cols].select_dtypes(include=['object', 'category']).columns
                 for col in cat_cols:
-                    df[col] = pd.factorize(df[col])[0]
+                    # factorize codes missing values as -1, which is a perfectly
+                    # ordinary-looking integer once the column is numeric: it then
+                    # joins every mean, correlation and test as though a blank cell
+                    # were a category one step below the first real one. Keep the
+                    # gap a gap.
+                    codes = pd.factorize(df[col])[0]
+                    df[col] = pd.Series(codes, index=df.index).where(codes != -1)
             
             elif op == 'remove_duplicates':
                 df = df.drop_duplicates(subset=target_cols if target_cols else None)
