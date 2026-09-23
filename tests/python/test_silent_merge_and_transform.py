@@ -14,7 +14,8 @@ were not the numbers in the file.
 
 2. run_preprocessing's log_transform clipped at zero before log1p, so every
    refund, credit and reversal in a ledger silently became 0 while the row
-   count stayed the same.
+   count stayed the same. The replacement refuses on the domain of log1p
+   (x <= -1), not on the sign, so returns and rates still transform.
 
 3. run_preprocessing's encode_categorical took pd.factorize's -1 for missing at
    face value, turning every blank cell into an ordinary-looking integer one
@@ -127,7 +128,7 @@ def test_a_single_dataset_is_unaffected(engine):
 LEDGER = "amount,region\n100,East\n-250,West\n50,East\n-75,\n"
 
 
-def test_log_transform_refuses_a_column_with_negatives(engine):
+def test_log_transform_refuses_a_column_with_out_of_domain_values(engine):
     # Previously: success, 4 rows, and -250 and -75 both returned as 0.0.
     out = preprocess(engine, LEDGER, ["log_transform"], ["amount"])
 
@@ -137,6 +138,24 @@ def test_log_transform_refuses_a_column_with_negatives(engine):
     # The count is the part that tells an examiner how much was at stake.
     assert "2" in out["error"]
 
+
+def test_log_transform_refuses_exactly_minus_one(engine):
+    # log1p(-1) is -inf: the boundary of the domain, not a point inside it.
+    out = preprocess(engine, "amount\n-1\n5\n", ["log_transform"], ["amount"])
+
+    assert out["success"] is False
+    assert "1" in out["error"]
+
+
+def test_log_transform_allows_values_between_minus_one_and_zero(engine):
+    # log1p is finite for every x > -1, which is what makes it the standard
+    # transform for returns and rates. Refusing on sign would have blocked this
+    # legitimate case along with the ledger one.
+    out = preprocess(engine, "amount\n-0.5\n0.25\n", ["log_transform"], ["amount"])
+
+    assert out["success"] is True
+    values = [float(row[0]) for row in csv_rows(out["preprocessedCsv"])[1:]]
+    assert values == pytest.approx([math.log1p(-0.5), math.log1p(0.25)], abs=1e-12)
 
 def test_log_transform_still_works_on_non_negative_values(engine):
     out = preprocess(engine, "amount\n100\n0\n50\n", ["log_transform"], ["amount"])

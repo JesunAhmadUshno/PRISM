@@ -1090,20 +1090,25 @@ def run_preprocessing(data, operations, columns=None):
                 # clip(lower=0) used to turn every negative value into 0, so on a
                 # ledger each refund, credit and reversal silently became zero:
                 # same row count, no warning, and every downstream mean, total and
-                # test computed on numbers that were never in the file. log1p is
-                # undefined below -1, so refuse and say which column, the way the
+                # test computed on numbers that were never in the file.
+                #
+                # The domain is the real constraint, not the sign. log1p(x) is
+                # finite for every x > -1, which is what makes it the standard
+                # transform for returns and rates, so a value like -0.5 is
+                # legitimate and passes through. At -1 it is -inf and below that
+                # undefined, so refuse there and say which column, the way the
                 # two-group tests refuse a column with three groups.
                 for col in numeric_cols:
                     if col in target_cols:
-                        negatives = int((df[col] < 0).sum())
-                        if negatives > 0:
+                        out_of_domain = int((df[col] <= -1).sum())
+                        if out_of_domain > 0:
                             return json.dumps({
                                 "success": False,
                                 "error": (
                                     "Cannot log-transform '" + str(col) + "': it has "
-                                    + format(negatives, ',') + " negative value(s) and a "
-                                    "logarithm is undefined for them. Filter or shift the "
-                                    "column first, or drop it from the selection - the "
+                                    + format(out_of_domain, ',') + " value(s) at or below "
+                                    "-1, where the logarithm is undefined. Filter or shift "
+                                    "the column first, or drop it from the selection - the "
                                     "previous behaviour replaced every negative with zero "
                                     "without saying so."
                                 )
