@@ -1,7 +1,7 @@
 # PRISM - Secure Data Analytics Platform
 
 [![Security](https://img.shields.io/badge/Security-Zero%20Trust-green.svg)](docs/TECHNICAL_DESIGN_DOCUMENT.md)
-[![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **Browser-Based, Serverless Data Analytics & Visualization Platform**
 
@@ -158,7 +158,7 @@ management system, not of a download.
 
 ## 📝 License
 
-Proprietary - See [LICENSE](LICENSE) for details.
+MIT - See [LICENSE](LICENSE) for details.
 
 ## 📖 Documentation
 
