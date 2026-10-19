@@ -11,6 +11,26 @@
 
 PRISM is a zero-trust data analytics platform that processes sensitive data (CSV, XLSX and XLS) entirely within your browser. It generates visual insights while guaranteeing complete data sovereignty: **no bytes ever leave your machine**.
 
+## Start here
+
+1. Open the live app: https://jesunahmadushno.github.io/PRISM/
+2. Drop in a CSV, XLSX, or XLS file. The analysis runs in your tab.
+   Nothing uploads.
+3. Read the claim table further down. Each claim names a check a stranger
+   can run alone.
+4. Run it from source instead: `npm install`, then `npm run dev`.
+
+## Receipts in numbers
+
+| Item | Value |
+| :--- | :--- |
+| Stars | 4, the most on this account |
+| Test files | 9, across the security, accessibility, and store suites |
+| CI workflows | 3 (ci, deploy, stats) |
+| Files in repo | 120 |
+| Input formats | CSV, XLSX, XLS |
+| Data sent to a server | None. All processing runs in the browser |
+
 ## ✨ Features
 
 ### Security (designed against ISO/IEC 27001:2022 Annex A control objectives)
