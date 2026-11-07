@@ -11,6 +11,8 @@
 
 PRISM is a zero-trust data analytics platform that processes sensitive data (CSV, XLSX and XLS) entirely within your browser. It generates visual insights while guaranteeing complete data sovereignty: **no bytes ever leave your machine**.
 
+Live dashboard: https://jesunahmadushno.github.io/PRISM/lab/ (the segment-reversal detector on the real Berkeley file, a Simpson's paradox lab, a false-discovery simulator and the known-answer checks, all computed from this repo's files).
+
 ## Start here
 
 1. Open the live app: https://jesunahmadushno.github.io/PRISM/
