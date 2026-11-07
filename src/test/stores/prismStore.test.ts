@@ -268,3 +268,18 @@ describe('clearFile', () => {
     expect(usePrismStore.getState().datasets).toHaveLength(0);
   });
 });
+
+describe('addDataset', () => {
+  const csvFile = (body: string, name = 'data.csv') => new File([body], name, { type: 'text/csv' });
+
+  it('reports a read/parse failure through store.error instead of rejecting', async () => {
+    // First line is blank, so the header cannot be read. This used to throw out
+    // of addDataset, leaving the Dataset Manager dropzone stuck in "uploading".
+    const file = csvFile('\n\n\n\n\n\n\n\n\n\na,b\n1,2\n');
+    await expect(usePrismStore.getState().addDataset(file)).resolves.toBeUndefined();
+    const { error, datasets } = usePrismStore.getState();
+    expect(error).toMatchObject({ code: 'FILE_ERROR', recoverable: true });
+    expect(error?.message).toContain('empty');
+    expect(datasets).toHaveLength(0);
+  });
+});

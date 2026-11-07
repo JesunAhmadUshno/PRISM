@@ -534,35 +534,47 @@ export const usePrismStore = create<PrismState>((set, get) => ({
       return;
     }
 
-    // Read file content
-    const { content, notices: parseNotices } = await readFileContent(file);
-    if (parseNotices.length > 0) {
-      set((state) => ({ file: { ...state.file, notices: parseNotices } }));
+    // A throw here would escape to the dropzone's onDrop, leaving it stuck in
+    // 'uploading' with no message. Report it the same way setFile does.
+    try {
+      // Read file content
+      const { content, notices: parseNotices } = await readFileContent(file);
+      if (parseNotices.length > 0) {
+        set((state) => ({ file: { ...state.file, notices: parseNotices } }));
+      }
+
+      // Extract columns from first row
+      const firstLine = content.split('\n')[0];
+      if (!firstLine) {
+        throw new Error('File is empty');
+      }
+      const columns = firstLine.split(',').map(col => col.trim().replace(/^"|"$/g, ''));
+      const rowCount = content.split('\n').filter(line => line.trim()).length - 1;
+
+      const newDataset: import('@/types').Dataset = {
+        id: crypto.randomUUID(),
+        name: file.name,
+        metadata: validationResult.metadata!,
+        content,
+        columns,
+        rowCount,
+        isActive: get().datasets.length === 0, // First dataset is active
+      };
+
+      const currentDatasets = get().datasets;
+      set({
+        datasets: [...currentDatasets, newDataset],
+        activeDatasetId: get().activeDatasetId || newDataset.id,
+      });
+    } catch (error) {
+      set({
+        error: {
+          code: 'FILE_ERROR',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          recoverable: true,
+        },
+      });
     }
-
-    // Extract columns from first row
-    const firstLine = content.split('\n')[0];
-    if (!firstLine) {
-      throw new Error('File is empty');
-    }
-    const columns = firstLine.split(',').map(col => col.trim().replace(/^"|"$/g, ''));
-    const rowCount = content.split('\n').filter(line => line.trim()).length - 1;
-
-    const newDataset: import('@/types').Dataset = {
-      id: crypto.randomUUID(),
-      name: file.name,
-      metadata: validationResult.metadata!,
-      content,
-      columns,
-      rowCount,
-      isActive: get().datasets.length === 0, // First dataset is active
-    };
-
-    const currentDatasets = get().datasets;
-    set({
-      datasets: [...currentDatasets, newDataset],
-      activeDatasetId: get().activeDatasetId || newDataset.id,
-    });
   },
 
   /**
