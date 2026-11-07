@@ -282,4 +282,21 @@ describe('addDataset', () => {
     expect(error?.message).toContain('empty');
     expect(datasets).toHaveLength(0);
   });
+
+  it('reads quoted headers and quoted multi-line fields the way pandas does', async () => {
+    const file = csvFile('"Name, Full",Age\n"Smith, Jo",41\n"Lee\nAnn",29\n');
+    await usePrismStore.getState().addDataset(file);
+    const [dataset] = usePrismStore.getState().datasets;
+    expect(usePrismStore.getState().error).toBeNull();
+    expect(dataset?.columns).toEqual(['Name, Full', 'Age']);
+    expect(dataset?.rowCount).toBe(2);
+  });
+
+  it('unescapes doubled quotes in a header and handles CRLF line endings', async () => {
+    const file = csvFile('"He said ""hi""",b\r\n1,2\r\n3,4\r\n');
+    await usePrismStore.getState().addDataset(file);
+    const [dataset] = usePrismStore.getState().datasets;
+    expect(dataset?.columns).toEqual(['He said "hi"', 'b']);
+    expect(dataset?.rowCount).toBe(2);
+  });
 });

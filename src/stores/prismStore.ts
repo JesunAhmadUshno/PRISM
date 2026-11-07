@@ -161,6 +161,69 @@ async function readWorkbookAsCsv(buffer: ArrayBuffer): Promise<ParseResult> {
 }
 
 /**
+ * Header columns and data-row count of a CSV, honouring RFC 4180 quoting
+ * ("a, b" is one field, "" is a literal quote, quoted fields may span lines)
+ * so the columns offered for linking match what pandas reads in the worker.
+ * Blank records after the header are not counted, as pandas skips them.
+ */
+function readCsvShape(content: string): { columns: string[]; rowCount: number } {
+  let header: string[] | null = null;
+  let fields: string[] = [];
+  let field = '';
+  let blank = true;
+  let rowCount = 0;
+  let inQuotes = false;
+
+  const endRecord = () => {
+    if (header === null) {
+      fields.push(field);
+      header = fields;
+    } else if (!blank) {
+      rowCount++;
+    }
+    fields = [];
+    field = '';
+    blank = true;
+  };
+
+  for (let i = 0; i < content.length; i++) {
+    const c = content[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (content[i + 1] === '"') {
+          if (header === null) field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else if (header === null) {
+        field += c;
+      }
+    } else if (c === '"') {
+      inQuotes = true;
+      blank = false;
+    } else if (c === ',') {
+      if (header === null) fields.push(field);
+      field = '';
+      blank = false;
+    } else if (c === '\n' || c === '\r') {
+      if (c === '\r' && content[i + 1] === '\n') i++;
+      endRecord();
+    } else {
+      if (header === null) field += c;
+      if (c !== ' ' && c !== '\t') blank = false;
+    }
+  }
+  if (!blank || fields.length > 0 || field !== '') endRecord();
+
+  const columns: string[] = (header ?? []).map((col: string) => col.trim());
+  if (columns.length === 0 || columns.every((col) => col === '')) {
+    throw new Error('File is empty');
+  }
+  return { columns, rowCount };
+}
+
+/**
  * Read an uploaded file as text, converting Excel workbooks to CSV.
  *
  * Single entry point on purpose - the hardening above must not end up applied to
@@ -543,13 +606,8 @@ export const usePrismStore = create<PrismState>((set, get) => ({
         set((state) => ({ file: { ...state.file, notices: parseNotices } }));
       }
 
-      // Extract columns from first row
-      const firstLine = content.split('\n')[0];
-      if (!firstLine) {
-        throw new Error('File is empty');
-      }
-      const columns = firstLine.split(',').map(col => col.trim().replace(/^"|"$/g, ''));
-      const rowCount = content.split('\n').filter(line => line.trim()).length - 1;
+      // Extract columns from the header record and count data records
+      const { columns, rowCount } = readCsvShape(content);
 
       const newDataset: import('@/types').Dataset = {
         id: crypto.randomUUID(),
