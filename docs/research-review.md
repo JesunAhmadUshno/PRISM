@@ -60,8 +60,8 @@ not yet in the app people use.
    to two weeks; no compute.
 2. **Measure the false-alarm rate on real business data.** 12 findings from 119
    triples on Titanic is called too many for a board pack. Needs: the W5/W6 corpus of
-   consented, real management spreadsheets (size set by the precision target; a few
-   dozen files gives a CI of roughly plus or minus 10 points), each labelled by an analyst as
+   consented, real management spreadsheets (size set by the precision target chosen),
+   each labelled by an analyst as
    "worth raising" or not, then precision per file with a bootstrap CI. Data
    collection is the cost; the run itself is seconds per file on a laptop.
 3. **Causal order.** Needs either user input (mark outcome and timing columns) or
