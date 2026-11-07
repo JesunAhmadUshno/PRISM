@@ -61,3 +61,8 @@ _site/
 
 # Golden datasets are downloaded on first use and digest-verified (tests/python/golden.py)
 tests/python/fixtures/golden/*.csv
+
+# Live dashboard (site/) local outputs
+site/node_modules/
+site/dist/
+site/.rubric/
