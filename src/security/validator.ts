@@ -89,7 +89,7 @@ export const DANGEROUS_PATTERNS: RegExp[] = [
   /javascript:/i,
   /vbscript:/i,
   /data:text\/html/i,
-  /on\w+\s*=/i, // Event handlers
+  /<[^<>]*[\s/]on\w+\s*=/i, // Event-handler attribute inside an HTML tag (not any "...on...=" text)
   /expression\s*\(/i, // CSS expression
   /url\s*\(\s*["']?\s*javascript/i,
 ];

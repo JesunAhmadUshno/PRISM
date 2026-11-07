@@ -32,12 +32,19 @@ describe('validateContentSecurity', () => {
     expect(result.error).toContain('potentially unsafe content');
   });
 
-  it('rejects benign data whose text happens to match the event-handler pattern', async () => {
-    // TODO(BUG): DANGEROUS_PATTERNS[5] at validator.ts:67 is /on\w+\s*=/i, which
-    // matches any "on" + word chars + "=" anywhere in the file. "London=UK" hits
-    // it ("on" + "don" + "="), so a legitimate spreadsheet is rejected outright
-    // with a security error and no way for the user to proceed.
-    const result = await validateContentSecurity(csv('city,code\nLondon=UK,1\n'));
+  it.each([
+    ['a word ending in "on" before "="', 'city,code\nLondon=UK,1\n'],
+    ['a URL query string', 'id,landing_url,visits\n1,https://shop.example.com/?session_id=abc,12\n'],
+    ['key=value notes', 'region,note\nNorth,"discount=10% on items"\nSouth,"conversion=high"\n'],
+  ])('accepts benign data containing %s', async (_label, body) => {
+    await expect(validateContentSecurity(csv(body))).resolves.toEqual({ isValid: true });
+  });
+
+  it.each([
+    ['img onerror', 'a,b\n1,<img src=x onerror=alert(1)>\n'],
+    ['svg onload', 'a,b\n1,"<svg/onload = alert(1)>"\n'],
+  ])('still rejects an HTML event-handler attribute (%s)', async (_label, body) => {
+    const result = await validateContentSecurity(csv(body));
     expect(result.isValid).toBe(false);
     expect(result.error).toContain('potentially unsafe content');
   });
