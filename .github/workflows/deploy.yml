@@ -8,6 +8,14 @@
 #   dist/   the Vite application build.
 #           It goes to /app/, so https://<user>.github.io/PRISM/app/
 #
+#   site/   the research lab dashboard, its own Vite package (vite base
+#           '/PRISM/lab/'). It goes to /lab/, so https://<user>.github.io/PRISM/lab/
+#           Its build first runs site/src/stats.check.mjs, which recomputes the
+#           detector's recorded numbers and fails the deploy if they drift.
+#
+# There is one Pages artifact per repo, so all three are assembled here; a
+# second Pages workflow would replace the marketing site and the app.
+#
 # vite.config.ts sets base to '/PRISM/app/' to match. Anything that builds a
 # runtime URL inside the app reads import.meta.env.BASE_URL rather than
 # hardcoding a path, including the vendored SheetJS loader, so the two stay
@@ -41,6 +49,9 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            site/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -58,6 +69,14 @@ jobs:
       - name: Build the application
         run: npm run build
 
+      # The lab has its own lockfile and exact pins. `npm run build` runs the
+      # known-answer check (node src/stats.check.mjs) before vite build.
+      - name: Build the lab dashboard
+        working-directory: site
+        run: |
+          npm ci
+          npm run build
+
       # Marketing site at the root, application underneath it at /app/.
       - name: Assemble the site
         run: |
@@ -66,6 +85,8 @@ jobs:
           mkdir -p _site/app
           cp -R web/. _site/
           cp -R dist/. _site/app/
+          mkdir -p _site/lab
+          cp -R site/dist/. _site/lab/
           # Pages runs Jekyll by default, which silently drops files and
           # directories beginning with an underscore. Vite does not emit any
           # today, but a future plugin might, and the failure would be a
@@ -85,6 +106,8 @@ jobs:
           test -f _site/app/index.html      || { echo "app index missing"; exit 1; }
           test -d _site/app/vendor          || { echo "vendored SheetJS missing"; exit 1; }
           grep -q '/PRISM/app/' _site/app/index.html || { echo "app was not built with base /PRISM/app/"; exit 1; }
+          test -f _site/lab/index.html      || { echo "lab index missing"; exit 1; }
+          grep -q '/PRISM/lab/' _site/lab/index.html || { echo "lab was not built with base /PRISM/lab/"; exit 1; }
           echo "assembly verified"
 
       - name: Setup Pages
