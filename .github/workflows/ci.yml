@@ -128,9 +128,11 @@ jobs:
       # Both are now resolved. xlsx is removed from the tree entirely, replaced by
       # SheetJS 0.20.3 vendored in public/vendor/ and loaded with an SHA-384
       # integrity hash. The transitive advisories cleared with `npm audit fix`,
-      # which required major bumps of vite and vitest. `npm audit` reports zero
-      # vulnerabilities at any severity, so the acceptance criterion named in the
-      # previous version of this comment is met and continue-on-error is gone.
+      # which required major bumps of vite and vitest. In November 2026 new vite
+      # and undici advisories turned this red again; a non-breaking `npm audit fix`
+      # cleared them. `npm audit` now reports no high or critical advisories (a
+      # few moderate ones in lint tooling sit below the gate), so
+      # continue-on-error stays gone.
       #
       # If this turns red, a dependency picked up an advisory. Fix the dependency.
       # Do not re-add continue-on-error.
