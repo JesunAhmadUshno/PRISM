@@ -132,14 +132,20 @@ describe('validateMagicBytes', () => {
     expect(result.error).toContain('does not match Excel format');
   });
 
-  it('rejects every genuine legacy .xls file', async () => {
-    // TODO(BUG): getFileType() (validator.ts:294-301) maps ".xls" to the "xlsx"
-    // branch, but MAGIC_BYTES.xlsx (validator.ts:46-50) only lists ZIP/PK
-    // signatures. A real BIFF8 .xls starts with the OLE2 compound-document magic
-    // D0 CF 11 E0 A1 B1 1A E1, so it can never pass - while the uploader,
-    // README and validateFileExtension all advertise .xls support.
+  it('accepts a genuine legacy .xls file (OLE2 compound-document header)', async () => {
+    // A real BIFF8 .xls starts with D0 CF 11 E0 A1 B1 1A E1, not a ZIP header.
+    // It used to be rejected because ".xls" was checked against ZIP signatures only.
     const legacyXls = fileWithHeader(OLE2_HEADER, 'legacy.xls', 'application/vnd.ms-excel');
-    const result = await validateMagicBytes(legacyXls);
+    await expect(validateMagicBytes(legacyXls)).resolves.toEqual({ isValid: true });
+  });
+
+  it('still accepts a .xls that is really an OOXML (ZIP) workbook', async () => {
+    const renamed = fileWithHeader(ZIP_HEADER, 'renamed.xls', 'application/vnd.ms-excel');
+    await expect(validateMagicBytes(renamed)).resolves.toEqual({ isValid: true });
+  });
+
+  it('rejects a .xlsx carrying an OLE2 header (that signature is only valid for .xls)', async () => {
+    const result = await validateMagicBytes(fileWithHeader(OLE2_HEADER, 'book.xlsx'));
     expect(result.isValid).toBe(false);
     expect(result.error).toContain('does not match Excel format');
   });

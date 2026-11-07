@@ -73,6 +73,11 @@ export const MAGIC_BYTES: Record<string, Uint8Array[]> = {
     new Uint8Array([0x50, 0x4B, 0x05, 0x06]), // Empty ZIP
     new Uint8Array([0x50, 0x4B, 0x07, 0x08]), // Spanned ZIP
   ],
+  // Legacy Excel 97-2003 (.xls) is an OLE2 compound document, not a ZIP.
+  // Only accepted for the .xls extension; a .xls may also be a renamed ZIP workbook.
+  xls: [
+    new Uint8Array([0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]),
+  ],
 };
 
 /**
@@ -247,8 +252,11 @@ export async function validateMagicBytes(file: File): Promise<FileValidationResu
 
   // Check XLSX magic bytes
   if (fileType === 'xlsx') {
-    const xlsxMagic = MAGIC_BYTES['xlsx'];
-    const isValid = xlsxMagic?.some((magic) => matchesMagicBytes(header, magic));
+    const xlsxMagic = [
+      ...(MAGIC_BYTES['xlsx'] ?? []),
+      ...(getFileExtension(file.name) === 'xls' ? MAGIC_BYTES['xls'] ?? [] : []),
+    ];
+    const isValid = xlsxMagic.some((magic) => matchesMagicBytes(header, magic));
     
     if (!isValid) {
       return {
