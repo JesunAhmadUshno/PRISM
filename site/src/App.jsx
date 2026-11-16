@@ -73,7 +73,7 @@ function Range({ label, value, min, max, step, onChange, show }) {
 export default function App() {
   useReveal();
   return (
-    <div className="wrap">
+    <div className="wrap"><a className="skip" href="#top">Skip to content</a>
       <MenuBar />
       <div className="glow" aria-hidden="true" />
       <Hero />
@@ -89,7 +89,7 @@ export default function App() {
       <footer>
         Berkeley data: the per-applicant file pinned by SHA-256 in <code>tests/python/golden.py</code>. Every number on this page is read at build time from
         <code>tests/python/expected/</code>, <code>tests/python/test_statistics.py</code>, <code>README.md</code> and <code>docs/vision/07_W1_RESULT.md</code>; the lab and the simulator run in your browser.
-      </footer>
+      <nav className="support" aria-label="Support this work"><a href="https://github.com/sponsors/JesunAhmadUshno">Sponsor this work</a><a href="https://github.com/sponsors/JesunAhmadUshno">Donate</a><a href="https://buymeacoffee.com/jesun">Buy Me a Coffee</a><a href="https://calendly.com/jesunahmadushno/30min">Work with me</a></nav></footer>
     </div>
   );
 }
@@ -97,7 +97,7 @@ export default function App() {
 function Hero() {
   const n = B.named;
   return (
-    <header className="card hero window" id="top" data-title="PRISM — segment_reversal on berkeley.csv">
+    <header className="card hero window" id="top" data-title="PRISM - segment_reversal on berkeley.csv">
       <div className="head">
         <p className="eyebrow">Detector result · real file, digest-pinned</p>
         <span className="pill good">● Graded {n.grade}</span>
@@ -152,7 +152,7 @@ function Simpson() {
   const levels = base.map((s) => s.level).sort((a, b) => (isCatch(a) - isCatch(b)) || a.localeCompare(b));
   const selIn = levels.includes(sel) ? sel : levels[0];
   return (
-    <section id="simpson" className="card window reveal" data-title="simpson.lab — live, in your browser">
+    <section id="simpson" className="card window reveal" data-title="simpson.lab - live, in your browser">
       <div className="head">
         <div>
           <p className="eyebrow">Live lab</p>
@@ -215,7 +215,7 @@ function Catchall() {
   let acc = 0;
   const W = 640, H = 34;
   return (
-    <section id="catchall" className="card window reveal" data-title="catchall.inspect — the full file">
+    <section id="catchall" className="card window reveal" data-title="catchall.inspect - the full file">
       <p className="eyebrow">The honest version</p>
       <h2>Analyse every row and the grade drops from reversal to attenuation, because {pct(a.catchallShare)} of applicants sit in “{a.catchall.join(', ')}”.</h2>
       <p className="sub">
@@ -276,7 +276,7 @@ function Fdr() {
   const sy = (p) => pad.t + (1 - Math.min(p, top) / top) * (H - pad.t - pad.b);
   const s = res.sample, a = res.avg;
   return (
-    <section id="fdr" className="card window reveal" data-title="fdr.sim — simulation, not a repo result">
+    <section id="fdr" className="card window reveal" data-title="fdr.sim - simulation, not a repo result">
       <div className="head">
         <div>
           <p className="eyebrow">Live simulation</p>
@@ -329,7 +329,7 @@ function Titanic() {
   const x = (v) => l + ((v - lo) / (hi - lo)) * (W - l - rr);
   const sevPill = { high: 'bad', medium: 'warn', low: 'info' };
   return (
-    <section id="titanic" className="card window reveal" data-title="titanic.findings — recorded replay">
+    <section id="titanic" className="card window reveal" data-title="titanic.findings - recorded replay">
       <div className="head">
         <div>
           <p className="eyebrow">Recorded replay</p>
@@ -408,7 +408,7 @@ function Known() {
   );
   const labels = ['milk poured, guessed milk', 'milk poured, guessed tea', 'tea poured, guessed milk', 'tea poured, guessed tea'];
   return (
-    <section id="known" className="card window reveal" data-title="known-answers.py — recomputed in your browser">
+    <section id="known" className="card window reveal" data-title="known-answers.py - recomputed in your browser">
       <p className="eyebrow">Known answers</p>
       <h2>The statistics engine is held to published results. This page recomputes three of them in JavaScript.</h2>
       <p className="sub">
@@ -461,7 +461,7 @@ function Known() {
 function Claims() {
   const tone = (s) => (/^Verified/.test(s) ? 'good' : /not certified/.test(s) ? 'warn' : 'info');
   return (
-    <section id="claims" className="card window reveal" data-title="claims.ledger — from README.md">
+    <section id="claims" className="card window reveal" data-title="claims.ledger - from README.md">
       <p className="eyebrow">Privacy and security claims</p>
       <h2>{R.claims.length} claims, each with a check a stranger can run alone.</h2>
       <p className="sub">Imported from the claim table in <a href={blob('README.md')}>README.md</a> at build time. Statuses are the project's own; “designed against” is not a certification.</p>
@@ -488,7 +488,7 @@ function Limits() {
     ['The file is not the paper', `The Berkeley figures are the hosted file's (adjusted OR ${B.named.mhOr.toFixed(4)}), which differs from the published table in two cells.`, 'info'],
   ];
   return (
-    <section id="limits" className="card window reveal" data-title="limits.md — threats to validity">
+    <section id="limits" className="card window reveal" data-title="limits.md - threats to validity">
       <p className="eyebrow">Limits and threats</p>
       <h2>What this does not show yet.</h2>
       <div className="grid2" style={{ marginTop: 16 }}>
@@ -515,7 +515,7 @@ function Receipts() {
     ['docs/research-review.md', 'Research review', 'Rubric grade and open gaps'],
   ];
   return (
-    <section id="receipts" className="card window reveal" data-title="repo.receipts — counted at build time">
+    <section id="receipts" className="card window reveal" data-title="repo.receipts - counted at build time">
       <p className="eyebrow">Receipts</p>
       <h2>Counted from the repo when this page was built, so they cannot go stale.</h2>
       <div className="tiles">

@@ -1,9 +1,11 @@
+/* Hallmark · v2.0.0 · Batch 4 rollout 2026-11-16 · Archetype B tool dashboard: tokens, labels, focus and motion standardised; data, copy and structure preserved */
+/* Hallmark · pre-emit critique: P3 H4 E4 S4 R5 V3 · weakest: V, one of the Lab OS dashboards on a shared house pattern; this pass adds the money links and the chat widget and brings the CSS to the floor only */
 /* Additions for the PRISM lab on top of the Lab OS base (styles.css, kept verbatim from the reference build). */
-.rowbtn { border: 0; background: none; padding: 0; font: 600 13px Inter, sans-serif; color: var(--primary); cursor: pointer; text-align: left; }
+.rowbtn { border: 0; background: none; padding: 0; font:600 13px var(--font-sans); color: var(--primary); cursor: pointer; text-align: left; }
 .rowbtn:hover { text-decoration: underline; }
 .rowbtn:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; border-radius: 4px; }
 tr.sel td { background: var(--primary-pale); }
-.btn.ghost:disabled { opacity: .45; cursor: default; }
+.btn.ghost:disabled { opacity: .45; cursor: not-allowed; background: var(--border); color: var(--muted); }
 @media (max-width: 760px) { .tiles[style*="repeat(3"] { grid-template-columns: 1fr !important; } }
 /* SVG text is in viewBox units; at phone width the charts shrink to about half, so double the type to stay legible. */
 @media (max-width: 760px) { svg.chart text { font-size: 20px; } }
