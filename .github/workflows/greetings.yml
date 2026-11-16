@@ -1,0 +1,18 @@
+name: Greetings
+on:
+  issues:
+    types: [opened]
+  pull_request_target:
+    types: [opened]
+permissions:
+  issues: write
+  pull-requests: write
+jobs:
+  greeting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/first-interaction@v3
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          issue_message: "Welcome. Thanks for opening this. It will be read and answered with evidence, not noise."
+          pr_message: "Welcome. Thanks for the contribution. CI runs first, then a review with receipts."

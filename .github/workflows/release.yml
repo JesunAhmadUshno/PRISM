@@ -1,0 +1,20 @@
+name: Release artifacts
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build source artifact
+        run: |
+          mkdir -p dist
+          tar --exclude=.git --exclude=dist --exclude=__pycache__ -czf "dist/PRISM-${GITHUB_REF_NAME}.tar.gz" .
+          ls -la dist
+      - name: Attach artifact to the release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: dist/*.tar.gz
