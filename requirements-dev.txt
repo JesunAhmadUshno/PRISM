@@ -17,7 +17,7 @@
 # computed by calling SciPy in the test are only meaningful if the engine and
 # the test agree on the method.
 
-pytest==9.0.2
+pytest==9.2.0
 numpy==2.4.2
 pandas==2.3.3
 scipy==1.17.1
