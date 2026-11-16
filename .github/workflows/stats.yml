@@ -65,7 +65,7 @@ jobs:
       # flaky host does not fail the gate; the digest check still runs on the
       # cached bytes, so a stale or altered cache cannot pass silently.
       - name: Cache golden datasets
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: tests/python/fixtures/golden
           key: golden-431abcb3-4a437fde
